@@ -1,0 +1,36 @@
+*.log
+.DS_Store
+.env
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+/.codex
+/.cursor/
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/auth.json
+/node_modules
+/public/build
+/public/fonts-manifest.dev.json
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+_ide_helper.php
+Homestead.json
+Homestead.yaml
+Thumbs.db
+
+# Kurulum yapılandırması: API anahtarları, istemci sırrı, APP_KEY. Depoya ASLA girmez.
+/satis.conf
+
+# TLS özel anahtarı ve sertifika turu dosyaları (sertifika.sh yazar). Depoya ASLA girmez.
+/sertifika/
+docker-compose.override.yml
+# İmajda derlemede yazılır (docker/Dockerfile); depoya girmez.
+/SURUM

@@ -1,0 +1,193 @@
+# =============================================================================
+#  satis — SYS (Satış Yönetim Sistemi) — Compose (compose-spec.io)
+# =============================================================================
+#  Her ortamda aynı dosya: `docker compose up -d --build`, NineDeploy, Coolify,
+#  Dokploy, Portainer... Ayarların hepsi ortamdan gelir (.env ya da platformun
+#  değişken ekranı); liste ve açıklamalar .env.example'da.
+#
+#      cp .env.example .env      # en az APP_URL ve DB_PASSWORD
+#      docker compose up -d --build
+#
+#  HTTP portu dışarı AÇILMAZ: alan adını ve TLS'i önündeki vekil (platformun
+#  kendisi ya da Caddy/nginx) verir, panele konteyner ağından 80'den ulaşır.
+#  Vekilsiz deneme için docker-compose.override.example.yml.
+#
+#  Servisler: panel (nginx + php-fpm + kuyruk işçisi + zamanlayıcı), db
+#  (MariaDB), redis (önbellek, oturum, kuyruk; kalıcılık kapalı), chroma
+#  (bilgi bankasının vektör deposu).
+#
+#  Dışarıdaki ya da platformun yönettiği bir veritabanı: DB_HOST ve
+#  kimlik bilgilerini verin, VT_KOPYA=0 ile db servisi hiç kalkmaz.
+#
+#  Adlar: konteyner ve hacimler ONEK ile başlar (varsayılan satis). Chroma
+#  bunun dışında: adı ve hacmi ayrı ayardır (CHROMA_KONTEYNERI, CHROMA_HACMI);
+#  mevcut bir hacmi kullanmak için onlar verilir. Aynı sunucuda ikinci
+#  kurulum üçünü de değiştirir.
+# =============================================================================
+
+services:
+  panel:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: ${ONEK:-satis}:yerel
+    container_name: ${ONEK:-satis}
+    restart: unless-stopped
+    # Kapanış NE KADAR SÜRÜYORSA o kadar beklenir; buradaki değer bir hedef
+    # değil, asla devreye girmemesi gereken bir TAVANDIR. Docker'ın varsayılanı
+    # 10 saniye ve süre dolunca SIGKILL: LLM yanıtını bekleyen bir teklif işi
+    # ortasından kesilir, konuşma "üretiliyor" durumunda takılı kalırdı.
+    stop_grace_period: 15m
+    expose: ["80"]
+    # Tanımsız değişken konteynere GEÇMEZ (boş değer de değil): varsayılanlar
+    # başlatıcıda ve config/ altında.
+    environment:
+      - APP_NAME
+      - APP_ENV
+      - APP_DEBUG
+      - APP_KEY
+      - APP_PREVIOUS_KEYS
+      - APP_URL
+      - APP_LOCALE
+      - APP_TIMEZONE
+      - TRUSTED_PROXIES
+      - DB_HOST
+      - DB_PORT
+      - DB_DATABASE
+      - DB_USERNAME
+      - DB_PASSWORD
+      - REDIS_HOST
+      - REDIS_PORT
+      - REDIS_PASSWORD
+      - GEMINI_API_KEY
+      - GEMINI_MODEL
+      - GEMINI_YEDEK_MODEL
+      - GEMINI_EMBED_MODEL
+      - GROQ_API_KEY
+      - GROQ_MODEL
+      - CHROMA_URL
+      - KIMLIK_ACIK
+      - KIMLIK_ADRES
+      - KIMLIK_ISTEMCI
+      - KIMLIK_ISTEMCI_SIR
+      - KIMLIK_DONUS
+      - KIMLIK_BILDIRIM_SIR
+      - KIMLIK_AD
+      - KIMLIK_KOK
+      - TEMA_ALANI
+      - DENETIM_ANAHTARI
+      - GUNCELLEME_JETONU
+      - PANEL_EMAIL
+      - PANEL_PASSWORD
+      - PANEL_AD
+      - SIRKET_ADI
+      - SIRKET_SITESI
+      - MAIL_MAILER
+      - MAIL_HOST
+      - MAIL_PORT
+      - MAIL_USERNAME
+      - MAIL_PASSWORD
+      - MAIL_SCHEME
+      - MAIL_FROM_ADDRESS
+      - MAIL_FROM_NAME
+    volumes:
+      # ⚠ APP_KEY ile BİRLİKTE yedeklenir: anahtar, uzak veritabanı bağlantısı
+      # ve şifreli alanlar ona bağlı.
+      - storage:/uygulama/storage/app
+      - logs:/uygulama/storage/logs
+    depends_on:
+      db:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_healthy
+      chroma:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1/up"]
+      interval: 30s
+      timeout: 5s
+      start_period: 90s
+      retries: 3
+
+  db:
+    image: mariadb:11.4
+    container_name: ${ONEK:-satis}-db
+    restart: unless-stopped
+    # 0: dışarıdaki ya da platformun veritabanı kullanılıyor (DB_HOST).
+    deploy:
+      replicas: ${VT_KOPYA:-1}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE:-satis}
+      MARIADB_USER: ${DB_USERNAME:-satis}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD gerekli (.env.example)}
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+      MARIADB_AUTO_UPGRADE: "1"
+    volumes:
+      - veritabani:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 6
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: ${ONEK:-satis}-redis
+    restart: unless-stopped
+    # Kalıcılık KAPALI: burada yalnız önbellek, oturum ve kuyruk durur.
+    # Kuyruktaki teklif işi de yeniden başlatmayı atlatmak zorunda değil:
+    # yarım kalan bir üretim, kaybolan bir üretimden daha kötüdür — konuşma
+    # "üretiliyor" durumunda takılı kalır.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+
+  # ---------------------------------------------------------------------------
+  #  CHROMA — bilgi bankasının vektör deposu
+  # ---------------------------------------------------------------------------
+  #  Teklif üretilirken benzer kayıtlar buradan çekiliyor
+  #  (App\Services\KnowledgeBaseService → /api/v2). Python servisi; panelin
+  #  imajına katılmıyor, yanında duruyor. Panel ona compose ağından
+  #  "chroma:8000" ile ulaşır (CHROMA_URL); servis adı bu yüzden değişmez.
+  #
+  #  DIŞARIYA PORT AÇMAZ. Chroma'nın kimlik doğrulaması yok: açık bir port,
+  #  bilgi bankasını okumanın ve silmenin yolu olurdu.
+  #
+  #  Sürüm SABİT: etiketsiz imaj her kurulumda başka bir Chroma getirir ve
+  #  depolama biçimi sürümler arasında değişebiliyor. Yükseltme bilerek,
+  #  hacim yedeğiyle yapılır.
+  chroma:
+    # Chroma 1.4.4, ÖZETLE sabit: Docker Hub'da sürüm etiketi yok (yalnız latest
+    # ve .dev etiketleri). Etiketsiz bırakmak her kurulumda başka bir latest
+    # demekti. Yükseltme bilerek yapılır: özet değişir, veri dizini sınanır.
+    image: chromadb/chroma@sha256:1e0b73a187a28757c572acba508c46f48c9e8b0acaf5c20e6d95cdedce1acdf6
+    # Ad ve hacim ONEK'e bağlı DEĞİL: mevcut bir hacmi kullanmak için
+    # CHROMA_HACMI verilir. Yanlış hacim, bilgi bankasının boş açılması
+    # demek olurdu.
+    container_name: ${CHROMA_KONTEYNERI:-satis-chroma}
+    restart: unless-stopped
+    volumes:
+      - chroma:/data
+
+networks:
+  default:
+    # Ağ yalıtımı: true iken konteynerler kimlik merkezine, LLM servislerine
+    # (Gemini, Groq) ve dışarıya bağlanamaz; dış dünyadan ayrık bir deneme
+    # kurulumu için. Port yayınları da o zaman dışarıdan erişilmez.
+    internal: ${AG_YALITIMI:-false}
+
+volumes:
+  storage:
+    name: ${ONEK:-satis}_storage
+  logs:
+    name: ${ONEK:-satis}_logs
+  veritabani:
+    name: ${ONEK:-satis}_veritabani
+  chroma:
+    name: ${CHROMA_HACMI:-satis-chroma-data}

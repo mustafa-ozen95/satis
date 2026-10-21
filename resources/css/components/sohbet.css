@@ -1,0 +1,329 @@
+/*
+ * Teklif sohbeti — Tekliflerim listesiyle aynı ekranda duran mesaj akışı.
+ *
+ * `.column--fill`in gövdesi içinde kullanılır: mesajlar üstte akar,
+ * `.mesaj-kutusu` gövdenin dibine yapışan sabit bir şerittir (bkz.
+ * `.detail__foot` ile aynı formül).
+ */
+
+/*
+ * DOKUNMA EKSENİ ELLE SINIRLANMAZ.
+ *
+ * `.columns`a `touch-action: pan-x`, `.column__body`ye `pan-y` yazmak
+ * ZARARLI: tarayıcı, dokunulan öğeden yukarı doğru bütün `touch-action`
+ * değerlerinin KESİŞİMİNİ alır. `.column__body` (pan-y) `.columns` (pan-x)
+ * içinde durduğu için kesişim BOŞ kalır ve o sayfa dokunmatik ekranda
+ * parmakla ne aşağı ne yana kaydırılabilir.
+ *
+ * İç içe kaydırma alanlarını tarayıcı kendi çözer; ortak şablonda da
+ * `touch-action` kuralı yok. Kural yazmamak, doğru kuralı yazmaktan iyi.
+ */
+
+.mesaj {
+    max-width: 640px;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+}
+
+.mesaj + .mesaj {
+    margin-top: var(--space-4);
+}
+
+.mesaj--assistant {
+    margin-right: auto;
+}
+
+.mesaj--user {
+    margin-left: auto;
+    background: var(--color-selected);
+    border-color: var(--color-line-strong);
+}
+
+.mesaj__rol {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+/* Kopyala düğmesi metnin yanında büyük durmasın: satırla aynı yükseklik. */
+.mesaj__rol .btn {
+    height: 20px;
+    width: 20px;
+}
+
+.mesaj__rol .btn svg {
+    width: 11px;
+    height: 11px;
+}
+
+.mesaj__icerik {
+    white-space: pre-wrap;
+    font-size: var(--text-md);
+    line-height: 1.6;
+}
+
+.mesaj--bekleniyor {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+/* Mesaj kutusu: gövdenin dibine yapışır, .detail__foot ile aynı formül. */
+.mesaj-kutusu {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-top: 1px solid var(--color-line);
+    flex-shrink: 0;
+}
+
+.mesaj-kutusu .textarea {
+    flex: 1;
+    min-height: 44px;
+    max-height: 160px;
+}
+
+/* Yeni teklif formundaki bloklar birbirine yapışmasın (bkz. .page__inner). */
+.yeni-teklif > * + * {
+    margin-top: var(--space-5);
+}
+
+/*
+ * Sütun DAR (`--column-medium`, ~218px): arama kutusu (`.filter`in
+ * varsayılan `min-width: 200px`si) başlık satırındaki eyebrow/sayaç/Yeni
+ * düğmesiyle yan yana asla sığmıyor, taşıyordu. Çözüm: arama kendi ALT
+ * SATIRINA iner, sütun genişliği kadar
+ * yayılır; `min-width` burada anlamsız, sıfırlanır.
+ */
+.column__head--dikey {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+}
+
+.column__head--dikey > .row {
+    width: 100%;
+}
+
+.teklif-arama {
+    width: 100%;
+    min-width: 0;
+}
+
+/*
+ * Toplu seçim şeridi: sütun başlığının hemen altında, `.bulk` bileşenini
+ * çevreleyen ince bir kap. `.column__head` ile aynı yatay boşluğu paylaşır.
+ */
+.teklif-toplu-cubuk {
+    padding: var(--space-2) var(--space-4);
+    border-bottom: 1px solid var(--color-line);
+}
+
+/*
+ * Tekliflerim satırı: onay kutusu + gezinme bağlantısı (.row-item, flex:1) +
+ * sil düğmesi. `.row-item`in kendi sol boşluğu onay kutusuyla çakışmasın
+ * diye burada sıfırlanır.
+ *
+ * SİL DÜĞMESİ AKIŞTAN ÇIKTI (bkz. aşağısı): başlık satırın sağ kenarına
+ * kadar uzanabilsin diye konumlandırma buradan veriliyor.
+ */
+.teklif-satiri {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.teklif-satiri > input[type='checkbox'] {
+    flex-shrink: 0;
+    margin-left: var(--space-4);
+    cursor: pointer;
+}
+
+.teklif-satiri > .row-item {
+    flex: 1;
+    min-width: 0;
+    padding-left: var(--space-2);
+    padding-right: var(--space-3);
+}
+
+/*
+ * SİL DÜĞMESİ BAŞLIKTAN YER ÇALMAZ.
+ *
+ * Düğme akışta dursaydı, görünmediği zamanlarda bile satırın önemli bir
+ * kısmını boş duran bir düğmeye ayırırdı.
+ *
+ * Akış dışında ve ALT SATIRIN hizasında durur: başlık satırı kenara kadar
+ * uzanır, düğme de tarihin sağındaki boşluğa oturur. `bottom: 0` keyfî
+ * değil — başlığın altında kalan bant düğmeyle aynı boyda (24 piksel); bir
+ * tık yukarı alınsa başlığın son harflerini örterdi.
+ *
+ * Görünürlük yine satır üzerine gelince/klavye odağında (bkz. .table__row-actions).
+ */
+.teklif-satiri > .btn {
+    position: absolute;
+    right: var(--space-3);
+    bottom: 0;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.teklif-satiri:hover > .btn,
+.teklif-satiri:focus-within > .btn {
+    opacity: 1;
+}
+
+/*
+ * DOKUNMATİKTE DÜĞME AKIŞA GERİ DÖNER.
+ *
+ * Orada üzerine gelinecek bir imleç yok: düğme hep görünür ve parmak payı
+ * için de daha geniş (32px). Hep görünen bir düğmenin yazının üstüne
+ * binmesi, yer ayırmasından daha kötü olurdu — o yüzden kendi yerini alır.
+ */
+@media (hover: none) {
+    .teklif-satiri {
+        padding-right: var(--space-3);
+    }
+
+    .teklif-satiri > .btn {
+        position: static;
+        flex-shrink: 0;
+        opacity: 1;
+    }
+}
+
+
+/*
+ * TEKLİF SATIRI İKİ SATIRDIR.
+ *
+ * Başlık, tarih ve durum tek satırda yarışırken başlık üç harfe düşüyordu
+ * ("Tem…"): liste sütunu 218 piksel ve onay kutusu, tarih, sil düğmesi
+ * payını alınca başlığa yer kalmıyordu.
+ * Başlık artık kendi satırında; tarih ve durum altına, küçük ve sessiz.
+ */
+.teklif-baglanti {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    min-width: 0;
+}
+
+.teklif-baslik {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.teklif-baslik .row-item__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/*
+ * Sağdaki boşluk sil düğmesinin yeri: düğme akış dışında durduğu için
+ * yerini burası ayırır, yoksa tarih düğmenin altında kalırdı.
+ */
+.teklif-alt {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding-left: calc(var(--space-2) + 8px);
+    padding-right: calc(24px + var(--space-2));
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+/* Dokunmatikte düğme akışta duruyor; alt satırın yer ayırmasına gerek yok. */
+@media (hover: none) {
+    .teklif-alt {
+        padding-right: 0;
+    }
+}
+
+/* Tarih sağa yaslanır: durum etiketiyle yarışmasın. */
+.teklif-alt .row-item__meta {
+    margin-left: auto;
+}
+
+/*
+ * ÇALIŞIRKEN KENDİNİ BELLİ EDER.
+ *
+ * "Hazırlanıyor" yazısı duruyordu ama hareketsizdi ve listeye bakan kişi
+ * işin sürdüğünü ancak yazıyı okuyunca anlıyordu. Nokta nefes alıyor; yazı
+ * da onunla birlikte soluklaşıyor.
+ *
+ * Hareketi azaltılmış tercih edenlerde animasyon durur (bkz. base.css);
+ * orada rengi ve yazı yine bilgiyi taşıyor.
+ */
+@keyframes teklif-nabiz {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.82); }
+}
+
+.dot--calisiyor {
+    animation: teklif-nabiz 1.4s ease-in-out infinite;
+}
+
+.teklif-durum {
+    font-size: var(--text-sm);
+}
+
+.teklif-durum--calisiyor {
+    color: var(--color-yellow-fg);
+    animation: teklif-nabiz 1.4s ease-in-out infinite;
+}
+
+.teklif-durum--hata {
+    color: var(--color-red-fg);
+}
+
+/*
+ * OKUNMAMIŞ YANIT BAŞKA TÜRLÜ BELLİ OLUR.
+ *
+ * Çalışan iş yanıp sönüyor; okunmamış yanıt ise SABİT duruyor ve kalın
+ * yazıyla ayrılıyor. İkisi aynı işaretle gösterilseydi "hâlâ sürüyor" ile
+ * "bitti, bakmadın" ayırt edilemezdi.
+ */
+.teklif-baglanti--okunmamis .row-item__label {
+    font-weight: var(--weight-semibold);
+    color: var(--color-text);
+}
+
+.teklif-durum--yeni {
+    color: var(--color-accent);
+    font-weight: var(--weight-medium);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dot--calisiyor,
+    .teklif-durum--calisiyor {
+        animation: none;
+    }
+}
+
+
+/*
+ * "DEVAMINI GÖR" ŞERİDİ.
+ *
+ * Listenin sonunda, satırlarla aynı hizada durur. Kendi başına bir bölüm
+ * gibi görünmemeli: bir satır kadar yer kaplar ve basılınca yerine yeni
+ * satırlar gelir.
+ */
+.teklif-daha {
+    padding: var(--space-2) var(--space-4) var(--space-4);
+}

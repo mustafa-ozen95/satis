@@ -1,0 +1,145 @@
+/*
+ * BU PANELE ÖZEL KÜÇÜK EKLER.
+ *
+ * Tasarım sisteminin kendisi ortak şablondan gelir. Burada yalnızca satış ekranlarının kullandığı ve şablonda
+ * karşılığı olmayan birkaç sınıf durur. Şablondaki bir dosyayı düzenlemek
+ * yerine buraya yazılır: yoksa bir sonraki eşitlemede kaybolur.
+ */
+
+/* Tablolarda satırın ana başlığı (fiyat kalemi adı, teklif başlığı…). */
+.satir-baslik {
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+/* Tek satırlık kod/kimlik gösterimi. */
+.kod {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+}
+
+.kod--kir {
+    word-break: break-all;
+    white-space: normal;
+}
+
+/* x-icon bileşeninin çizdiği simgeler. */
+.ikon {
+    width: 1em;
+    height: 1em;
+}
+
+/*
+ * Tema düğmesindeki iki simge: hangisinin görüneceğini tema belirler.
+ * Şablon bunun yerine tek bir SVG kullanıyor; burada x-icon bileşeni var.
+ */
+.icon-moon,
+.icon-sun {
+    display: none;
+}
+
+:root[data-theme='dark'] .icon-sun,
+:root:not([data-theme='dark']) .icon-moon {
+    display: inline-block;
+}
+
+
+/*
+ * SAYI KARTLARI (İstatistikler ekranı).
+ *
+ * Şablonda karşılığı yok: şablonun panel.css'i yalnızca anahtar/değer
+ * listesi (.facts) tanımlar. Kart ızgarası burada durur ki şablonun
+ * panel.css'i olduğu gibi kalsın.
+ */
+.figure__value {
+    font-family: var(--font-mono);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-medium);
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.figure__value--green  { color: var(--color-green-fg); }
+.figure__value--red    { color: var(--color-red-fg); }
+.figure__value--yellow { color: var(--color-yellow-fg); }
+.figure__value--blue   { color: var(--color-blue-fg); }
+.figure__value--gray   { color: var(--color-gray-fg); }
+
+.figure__label {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+
+.figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--space-5);
+}
+
+.figures--tight {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+}
+
+.figures--tight .figure__value {
+    font-size: var(--text-xl);
+}
+
+
+/*
+ * YERİNDE DÜZENLENEN HÜCRE.
+ *
+ * Girdi hücrenin İÇİNE oturur: satır zıplamasın ve göz aynı yerde kalsın.
+ * Kenarlık yok, zemin hücreninkinden bir ton açık — düzenlemede olduğu
+ * belli olmalı ama tablo dağılmamalı.
+ */
+.input--hucre {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    padding: 2px 4px;
+    border-color: var(--color-accent);
+    background: var(--color-page);
+    font: inherit;
+}
+
+/*
+ * Dokunmatikte hücre girdisi de 16 piksel.
+ *
+ * `font: inherit` hücrenin yazısını alıyor ve tablo yazısı 16'nın altında:
+ * iOS o alana odaklanınca sayfayı yakınlaştırıyor ve geri almıyordu. Satır
+ * bir tık yükselir; yakınlaştırılmış bir tabloda kaybolmaktan iyidir.
+ */
+@media (max-width: 720px), (pointer: coarse) {
+    .input--hucre {
+        font-size: max(1rem, 1em);
+    }
+}
+
+.hucre--duzenleniyor {
+    padding-block: 2px;
+    background: var(--color-selected);
+}
+
+/* Kaydedilirken: tıklanabilir görünmesin, ama yerinde kalsın. */
+.hucre--bekliyor {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/*
+ * İMLEÇ DEĞİŞMEZ.
+ *
+ * `cursor: cell` kullanılmaz: o imleç kalın bir ARTI işareti çizer ve tablo
+ * üzerinde gezinirken hücre seçiliyormuş gibi durur. Düzenlenebilirliği
+ * hücrenin kendi ipucu (title) söylüyor; imleç olduğu gibi kalıyor.
+ */
+

@@ -1,0 +1,44 @@
+# Derleme bağlamına GİRMEYECEKLER.
+#
+# Buradaki her satır imaj boyutunu değil, YENİDEN DERLEME sıklığını da
+# belirler: bağlamdaki bir dosya değişince katman önbelleği düşer.
+
+.git
+# Çalışan sürüm için yalnız HEAD ve ref'ler (docker/surum-oku.sh); nesneler girmez.
+!.git/HEAD
+!.git/packed-refs
+!.git/refs/heads/
+.github
+node_modules
+vendor
+public/build
+public/hot
+storage/app/*
+!storage/app/.gitignore
+!storage/app/public
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+bootstrap/cache/*
+
+# Gizli değerler imaja ASLA girmez; çalışma anında env ile verilir.
+#
+# satis.conf BURADA OLMAK ZORUNDA: Dockerfile "COPY . ." yapıyor ve dosya
+# derleme bağlamında duruyor; buradan çıkarsa içindeki API anahtarları imaja
+# girer. İmaj ghcr.io'ya gidiyor: oraya giren bir sır herkese açıktır.
+.env
+.env.*
+!.env.example
+/satis.conf
+/*.conf
+
+# SERTİFİKA DİZİNİ DE: sertifika.sh TLS özel anahtarını buraya yazıyor;
+# burada olmasa "COPY . ." onu imaja taşırdı. Kapsayıcı bu dizinin gereken
+# parçalarını imajdan değil, bağlama noktasından okur.
+/sertifika
+
+*.log
+*.sqlite
+.phpunit.result.cache
+.DS_Store
