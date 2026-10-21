@@ -7,6 +7,7 @@ use App\Services\Api\ApiTokenContext;
 use App\Services\Api\ApiTokenGuard;
 use App\Services\Api\TokenAbilityGate;
 use App\Services\Settings\SettingsRepository;
+use App\View\UstCubuk;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
@@ -99,6 +100,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('perm_teklif', fn (User $user) => $user->isAdmin() || $user->perm_teklif);
         Gate::define('perm_bilgi', fn (User $user) => $user->isAdmin() || $user->perm_bilgi);
         Gate::define('perm_fiyat', fn (User $user) => $user->isAdmin() || $user->perm_fiyat);
+
+        // Üst çubuğun bölüm listesi (bkz. UstCubuk).
+        View::composer('components.nav.topbar', UstCubuk::class);
 
         // Her view'da kullanılabilen ortak degiskenler (oturum kullanıcısı, bekleyen sifre istegi sayisi).
         // Bu composer bir sayfada birden fazla view/component render edilirken

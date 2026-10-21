@@ -145,13 +145,12 @@
       bkz. modal-govde-ici.css.
     --}}
     @foreach ($kullanicilar as $k)
-    @php $buFormDuzenle = old('_form') === "duzenle-{$k->id}"; @endphp
 <div
   class="modal"
   id="kullanici-duzenle-{{ $k->id }}"
   data-modal
-  @unless ($buFormDuzenle) hidden @endunless
-  @if ($buFormDuzenle) data-modal-acik data-modal-kapanis="{{ route('admin.kullanicilar.index') }}" @endif
+  @unless ($duzenleAcik[$k->id]) hidden @endunless
+  @if ($duzenleAcik[$k->id]) data-modal-acik data-modal-kapanis="{{ route('admin.kullanicilar.index') }}" @endif
   role="dialog" aria-modal="true" aria-labelledby="kullanici-duzenle-{{ $k->id }}-baslik"
 >
   <div class="modal__box modal__box--wide">
@@ -164,7 +163,7 @@
       @csrf
       <input type="hidden" name="_form" value="duzenle-{{ $k->id }}">
       <div class="modal__body">
-        @if ($buFormDuzenle && $errors->any())
+        @if ($duzenleAcik[$k->id] && $errors->any())
         <div class="alert alert--danger modal__alert">
           <ul class="alert__list">
             @foreach ($errors->all() as $hataMesaji)
@@ -177,21 +176,21 @@
         <div class="field">
           <label class="field__label" for="ad-{{ $k->id }}">Ad soyad</label>
           <input type="text" class="input" id="ad-{{ $k->id }}" name="ad"
-                 value="{{ $buFormDuzenle ? old('ad') : $k->name }}" required
-                 aria-invalid="{{ $buFormDuzenle && $errors->has('ad') ? 'true' : 'false' }}">
+                 value="{{ $duzenleAcik[$k->id] ? old('ad') : $k->name }}" required
+                 aria-invalid="{{ $duzenleAcik[$k->id] && $errors->has('ad') ? 'true' : 'false' }}">
         </div>
 
         <div class="field">
           <label class="field__label" for="eposta-{{ $k->id }}">E-posta <span class="text-muted">(giriş anahtarı)</span></label>
           <input type="email" class="input input--mono" id="eposta-{{ $k->id }}" name="eposta" required
-                 value="{{ $buFormDuzenle ? old('eposta') : $k->email }}" placeholder="ad.soyad@ornek.test"
-                 aria-invalid="{{ $buFormDuzenle && $errors->has('eposta') ? 'true' : 'false' }}">
+                 value="{{ $duzenleAcik[$k->id] ? old('eposta') : $k->email }}" placeholder="ad.soyad@ornek.test"
+                 aria-invalid="{{ $duzenleAcik[$k->id] && $errors->has('eposta') ? 'true' : 'false' }}">
         </div>
 
         <div class="field-row">
           <div class="field">
             <label class="field__label" for="yeni-sifre-{{ $k->id }}">Yeni şifre</label>
-            <input type="password" class="input" id="yeni-sifre-{{ $k->id }}" name="yeni_sifre" placeholder="değişmesin (boş bırak)" aria-invalid="{{ $buFormDuzenle && $errors->has('yeni_sifre') ? 'true' : 'false' }}">
+            <input type="password" class="input" id="yeni-sifre-{{ $k->id }}" name="yeni_sifre" placeholder="değişmesin (boş bırak)" aria-invalid="{{ $duzenleAcik[$k->id] && $errors->has('yeni_sifre') ? 'true' : 'false' }}">
           </div>
           <div class="field">
             <label class="field__label" for="rol-{{ $k->id }}">Rol</label>
@@ -201,16 +200,15 @@
               düzenlemeyi gerektirirdi.
             --}}
             <select class="select" id="rol-{{ $k->id }}" name="rol">
-              @php $rolDegeri = $buFormDuzenle ? old('rol') : $k->rol?->slug; @endphp
               @foreach ($roller as $rol)
-                <option value="{{ $rol->slug }}" {{ $rolDegeri === $rol->slug ? 'selected' : '' }}>{{ $rol->label }}</option>
+                <option value="{{ $rol->slug }}" {{ ($duzenleAcik[$k->id] ? old('rol') : $k->rol?->slug) === $rol->slug ? 'selected' : '' }}>{{ $rol->label }}</option>
               @endforeach
             </select>
           </div>
         </div>
 
         <label class="checkbox field--separated">
-          <input type="checkbox" name="aktif" value="1" {{ ($buFormDuzenle ? old('aktif') : $k->aktif) ? 'checked' : '' }}>
+          <input type="checkbox" name="aktif" value="1" {{ ($duzenleAcik[$k->id] ? old('aktif') : $k->aktif) ? 'checked' : '' }}>
           Hesap aktif
         </label>
 
@@ -218,15 +216,15 @@
           <span class="field__label">Sayfa izinleri <span class="text-muted">(admin rolü zaten her şeye erişir)</span></span>
           <div class="choices">
             <label class="checkbox">
-              <input type="checkbox" name="perm_teklif" value="1" {{ ($buFormDuzenle ? old('perm_teklif') : $k->perm_teklif) ? 'checked' : '' }}>
+              <input type="checkbox" name="perm_teklif" value="1" {{ ($duzenleAcik[$k->id] ? old('perm_teklif') : $k->perm_teklif) ? 'checked' : '' }}>
               Teklif Oluştur
             </label>
             <label class="checkbox">
-              <input type="checkbox" name="perm_bilgi" value="1" {{ ($buFormDuzenle ? old('perm_bilgi') : $k->perm_bilgi) ? 'checked' : '' }}>
+              <input type="checkbox" name="perm_bilgi" value="1" {{ ($duzenleAcik[$k->id] ? old('perm_bilgi') : $k->perm_bilgi) ? 'checked' : '' }}>
               Bilgi Bankası
             </label>
             <label class="checkbox">
-              <input type="checkbox" name="perm_fiyat" value="1" {{ ($buFormDuzenle ? old('perm_fiyat') : $k->perm_fiyat) ? 'checked' : '' }}>
+              <input type="checkbox" name="perm_fiyat" value="1" {{ ($duzenleAcik[$k->id] ? old('perm_fiyat') : $k->perm_fiyat) ? 'checked' : '' }}>
               Fiyat Kalemleri
             </label>
           </div>
@@ -241,7 +239,6 @@
 </div>
 @endforeach
 
-@php $buFormEkle = old('_form') === 'ekle'; @endphp
 <div
   class="modal"
   id="kullanici-ekle"

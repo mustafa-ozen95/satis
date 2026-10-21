@@ -9,6 +9,7 @@ use App\Models\PermissionRequest;
 use App\Models\Rol;
 use App\Models\User;
 use App\Services\ActivityRecorder;
+use App\Support\FormDurumu;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
@@ -22,8 +23,12 @@ class KullaniciController extends Controller
     {
         $this->authorize('admin');
 
+        $kullanicilar = User::with('rol')->orderBy('id')->get();
+
         return view('admin.kullanicilar.index', [
-            'kullanicilar' => User::with('rol')->orderBy('id')->get(),
+            'kullanicilar' => $kullanicilar,
+            'duzenleAcik' => FormDurumu::duzenleHaritasi($kullanicilar->pluck('id')),
+            'buFormEkle' => FormDurumu::ekle(),
             'roller' => Rol::sirali()->get(),
             'yetkiTalepleri' => PermissionRequest::with('user')
                 ->where('durum', 'bekliyor')

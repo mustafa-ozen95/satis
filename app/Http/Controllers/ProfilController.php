@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Profil\AdRequest;
 use App\Http\Requests\Profil\SifreRequest;
 use App\Models\PermissionRequest;
+use App\Support\FormDurumu;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -32,6 +33,8 @@ class ProfilController extends Controller
 
         return view('profil.index', [
             'bekleyenTalep' => $bekleyenTalep,
+            'buFormAd' => FormDurumu::mi('ad'),
+            'buFormSifre' => FormDurumu::mi('sifre'),
         ]);
     }
 

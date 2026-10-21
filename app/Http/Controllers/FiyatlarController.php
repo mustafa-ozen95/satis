@@ -6,6 +6,7 @@ use App\Http\Requests\FiyatAlanRequest;
 use App\Http\Requests\StorePriceItemRequest;
 use App\Models\PriceItem;
 use App\Services\ActivityRecorder;
+use App\Support\FormDurumu;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -19,8 +20,12 @@ class FiyatlarController extends Controller
     {
         $this->authorize('viewAny', PriceItem::class);
 
+        $fiyatlar = PriceItem::aktif()->orderBy('category')->orderBy('name')->get();
+
         return view('fiyatlar.index', [
-            'fiyatlar' => PriceItem::aktif()->orderBy('category')->orderBy('name')->get(),
+            'fiyatlar' => $fiyatlar,
+            'duzenleAcik' => FormDurumu::duzenleHaritasi($fiyatlar->pluck('id')),
+            'buFormEkle' => FormDurumu::ekle(),
 
             /*
              * Kategori SEÇİLİR. Liste var olan kalemlerden geliyor; serbest

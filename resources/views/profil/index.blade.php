@@ -1,8 +1,4 @@
 <x-layout.app title="Hesabım">
-@php
-$buFormAd = old('_form') === 'ad';
-$buFormSifre = old('_form') === 'sifre';
-@endphp
 <div class="page">
   <div class="page__inner">
     <header class="page-head">

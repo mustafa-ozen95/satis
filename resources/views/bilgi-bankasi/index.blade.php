@@ -41,13 +41,12 @@
       </div>
     </section>
 
-    @php $buFormDuzenle = old('_form') === "duzenle-{$k['id']}"; @endphp
     <div
       class="modal"
       id="bilgi-duzenle-{{ $k['id'] }}"
       data-modal
-      @unless ($buFormDuzenle) hidden @endunless
-      @if ($buFormDuzenle) data-modal-acik data-modal-kapanis="{{ route('bilgi-bankasi.index') }}" @endif
+      @unless ($duzenleAcik[$k['id']]) hidden @endunless
+      @if ($duzenleAcik[$k['id']]) data-modal-acik data-modal-kapanis="{{ route('bilgi-bankasi.index') }}" @endif
       role="dialog" aria-modal="true" aria-labelledby="bilgi-duzenle-{{ $k['id'] }}-baslik"
     >
       <div class="modal__box modal__box--wide">
@@ -60,7 +59,7 @@
           @csrf
           <input type="hidden" name="_form" value="duzenle-{{ $k['id'] }}">
           <div class="modal__body">
-            @if ($buFormDuzenle && $errors->any())
+            @if ($duzenleAcik[$k['id']] && $errors->any())
             <div class="alert alert--danger modal__alert">
               <ul class="alert__list">
                 @foreach ($errors->all() as $hataMesaji)
@@ -72,14 +71,14 @@
 
             <div class="field">
               <label class="field__label" for="baslik-{{ $k['id'] }}">Başlık</label>
-              <input type="text" class="input" id="baslik-{{ $k['id'] }}" name="baslik" value="{{ $buFormDuzenle ? old('baslik') : $k['title'] }}" aria-invalid="{{ $buFormDuzenle && $errors->has('baslik') ? 'true' : 'false' }}" required>
+              <input type="text" class="input" id="baslik-{{ $k['id'] }}" name="baslik" value="{{ $duzenleAcik[$k['id']] ? old('baslik') : $k['title'] }}" aria-invalid="{{ $duzenleAcik[$k['id']] && $errors->has('baslik') ? 'true' : 'false' }}" required>
             </div>
             <x-form.kategori :id="'kategori-'.$k['id']"
                              :secenekler="$kategoriler"
-                             :deger="$buFormDuzenle ? old('kategori') : $k['category']" />
+                             :deger="$duzenleAcik[$k['id']] ? old('kategori') : $k['category']" />
             <div class="field">
               <label class="field__label" for="bilgi-{{ $k['id'] }}">Bilgi</label>
-              <textarea class="textarea" id="bilgi-{{ $k['id'] }}" name="bilgi" aria-invalid="{{ $buFormDuzenle && $errors->has('bilgi') ? 'true' : 'false' }}" required>{{ $buFormDuzenle ? old('bilgi') : $k['text'] }}</textarea>
+              <textarea class="textarea" id="bilgi-{{ $k['id'] }}" name="bilgi" aria-invalid="{{ $duzenleAcik[$k['id']] && $errors->has('bilgi') ? 'true' : 'false' }}" required>{{ $duzenleAcik[$k['id']] ? old('bilgi') : $k['text'] }}</textarea>
             </div>
           </div>
           <footer class="modal__footer">
@@ -96,7 +95,6 @@
     @endforelse
 
     {{-- "ekle" modalı da bilerek `.page__inner`in İÇİNDE - bkz. modal-govde-ici.css. --}}
-    @php $buFormEkle = old('_form') === 'ekle'; @endphp
 <div
   class="modal"
   id="bilgi-ekle"

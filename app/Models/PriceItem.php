@@ -22,6 +22,18 @@ class PriceItem extends Model
         ];
     }
 
+    /** Ekranda görünen fiyat: "1.500 TL" (gereksiz sıfırlar atılır). */
+    public function gosterimFiyati(): string
+    {
+        return rtrim(rtrim(number_format((float) $this->price, 2, ',', '.'), '0'), ',').' '.$this->currency;
+    }
+
+    /** Yerinde düzenlenecek ham değer: "1500" (binlik ayracı yok). */
+    public function hamFiyat(): string
+    {
+        return rtrim(rtrim(number_format((float) $this->price, 2, '.', ''), '0'), '.');
+    }
+
     public function scopeAktif($query)
     {
         return $query->where('aktif', true);

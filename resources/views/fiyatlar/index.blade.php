@@ -28,21 +28,6 @@
             </thead>
             <tbody>
               @forelse ($fiyatlar as $f)
-              {{--
-                Tek satırlık parantezli biçim KULLANILMIYOR: Blade o
-                direktifin argümanını parantez sayarak ayırıyor ve içindeki
-                tırnaklı virgül/nokta (number_format ayraçları) onu
-                yanıltıyor; derlenen dosya bozuluyor ve hata bambaşka bir
-                değişkende görünüyor. Blok biçimi böyle bir ayrıştırma
-                yapmıyor.
-
-                Yorumun içine o direktifi ÖRNEK OLARAK YAZMAK da aynı şeyi
-                tetikliyordu — yorumlar direktiflerden sonra eleniyor.
-              --}}
-              @php
-                  $fiyatGosterim = rtrim(rtrim(number_format((float) $f->price, 2, ',', '.'), '0'), ',').' '.$f->currency;
-                  $fiyatHam = rtrim(rtrim(number_format((float) $f->price, 2, '.', ''), '0'), '.');
-              @endphp
               <tr>
                 {{--
                   HÜCREYE ÇİFT TIKLAYINCA YERİNDE DÜZENLENİR (yerinde-duzenle.js).
@@ -66,9 +51,9 @@
 
                 <td data-label="Fiyat" class="table__cell--mono" data-alan="price" data-tur="sayi"
                     data-adres="{{ route('fiyatlar.alan', $f) }}"
-                    data-ham="{{ $fiyatHam }}"
-                    data-gosterim="{{ $fiyatGosterim }}"
-                    title="Düzenlemek için çift tıklayın">{{ $fiyatGosterim }}</td>
+                    data-ham="{{ $f->hamFiyat() }}"
+                    data-gosterim="{{ $f->gosterimFiyati() }}"
+                    title="Düzenlemek için çift tıklayın">{{ $f->gosterimFiyati() }}</td>
 
                 <td data-label="Birim" data-alan="unit" data-tur="metin"
                     data-adres="{{ route('fiyatlar.alan', $f) }}"
@@ -102,13 +87,12 @@
 
     {{-- Modallar bilerek `.page__inner`in İÇİNDE duruyor - bkz. modal-govde-ici.css. --}}
     @foreach ($fiyatlar as $f)
-    @php $buFormDuzenle = old('_form') === "duzenle-{$f->id}"; @endphp
 <div
   class="modal"
   id="fiyat-duzenle-{{ $f->id }}"
   data-modal
-  @unless ($buFormDuzenle) hidden @endunless
-  @if ($buFormDuzenle) data-modal-acik data-modal-kapanis="{{ route('fiyatlar.index') }}" @endif
+  @unless ($duzenleAcik[$f->id]) hidden @endunless
+  @if ($duzenleAcik[$f->id]) data-modal-acik data-modal-kapanis="{{ route('fiyatlar.index') }}" @endif
   role="dialog" aria-modal="true" aria-labelledby="fiyat-duzenle-{{ $f->id }}-baslik"
 >
   <div class="modal__box modal__box--wide">
@@ -121,7 +105,7 @@
       @csrf
       <input type="hidden" name="_form" value="duzenle-{{ $f->id }}">
       <div class="modal__body">
-        @if ($buFormDuzenle && $errors->any())
+        @if ($duzenleAcik[$f->id] && $errors->any())
         <div class="alert alert--danger modal__alert">
           <ul class="alert__list">
             @foreach ($errors->all() as $hataMesaji)
@@ -135,29 +119,29 @@
           <x-form.kategori name="category"
                            :id="'category-'.$f->id"
                            :secenekler="$kategoriler"
-                           :deger="$buFormDuzenle ? old('category') : $f->category" />
+                           :deger="$duzenleAcik[$f->id] ? old('category') : $f->category" />
           <div class="field">
             <label class="field__label" for="name-{{ $f->id }}">Ad</label>
-            <input type="text" class="input" id="name-{{ $f->id }}" name="name" value="{{ $buFormDuzenle ? old('name') : $f->name }}" aria-invalid="{{ $buFormDuzenle && $errors->has('name') ? 'true' : 'false' }}" required>
+            <input type="text" class="input" id="name-{{ $f->id }}" name="name" value="{{ $duzenleAcik[$f->id] ? old('name') : $f->name }}" aria-invalid="{{ $duzenleAcik[$f->id] && $errors->has('name') ? 'true' : 'false' }}" required>
           </div>
         </div>
         <div class="field-row">
           <div class="field">
             <label class="field__label" for="price-{{ $f->id }}">Fiyat</label>
-            <input type="number" step="0.01" class="input input--mono" id="price-{{ $f->id }}" name="price" value="{{ $buFormDuzenle ? old('price') : $f->price }}" aria-invalid="{{ $buFormDuzenle && $errors->has('price') ? 'true' : 'false' }}" required>
+            <input type="number" step="0.01" class="input input--mono" id="price-{{ $f->id }}" name="price" value="{{ $duzenleAcik[$f->id] ? old('price') : $f->price }}" aria-invalid="{{ $duzenleAcik[$f->id] && $errors->has('price') ? 'true' : 'false' }}" required>
           </div>
           <div class="field">
             <label class="field__label" for="unit-{{ $f->id }}">Birim</label>
-            <input type="text" class="input" id="unit-{{ $f->id }}" name="unit" value="{{ $buFormDuzenle ? old('unit') : $f->unit }}">
+            <input type="text" class="input" id="unit-{{ $f->id }}" name="unit" value="{{ $duzenleAcik[$f->id] ? old('unit') : $f->unit }}">
           </div>
         </div>
         <label class="checkbox field--separated">
-          <input type="checkbox" name="kdv_dahil" value="1" {{ ($buFormDuzenle ? old('kdv_dahil') : $f->kdv_dahil) ? 'checked' : '' }}>
+          <input type="checkbox" name="kdv_dahil" value="1" {{ ($duzenleAcik[$f->id] ? old('kdv_dahil') : $f->kdv_dahil) ? 'checked' : '' }}>
           KDV dahil
         </label>
         <div class="field">
           <label class="field__label" for="notlar-{{ $f->id }}">Not</label>
-          <input type="text" class="input" id="notlar-{{ $f->id }}" name="notlar" value="{{ $buFormDuzenle ? old('notlar') : $f->notlar }}">
+          <input type="text" class="input" id="notlar-{{ $f->id }}" name="notlar" value="{{ $duzenleAcik[$f->id] ? old('notlar') : $f->notlar }}">
         </div>
       </div>
       <footer class="modal__footer">
@@ -169,7 +153,6 @@
 </div>
 @endforeach
 
-@php $buFormEkle = old('_form') === 'ekle'; @endphp
 <div
   class="modal"
   id="fiyat-ekle"

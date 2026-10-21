@@ -7,6 +7,7 @@ use App\Models\BilgiKaydi;
 use App\Models\User;
 use App\Services\ActivityRecorder;
 use App\Services\KnowledgeBaseService;
+use App\Support\FormDurumu;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -22,8 +23,12 @@ class BilgiBankasiController extends Controller
     {
         $this->authorize('perm_bilgi', User::class);
 
+        $kayitlar = $this->knowledgeBase->listEntries();
+
         return view('bilgi-bankasi.index', [
-            'kayitlar' => $this->knowledgeBase->listEntries(),
+            'kayitlar' => $kayitlar,
+            'duzenleAcik' => FormDurumu::duzenleHaritasi(collect($kayitlar)->pluck('id')),
+            'buFormEkle' => FormDurumu::ekle(),
 
             /*
              * Kategori SEÇİLİR. Liste var olan kayıtlardan geliyor; ayrı bir

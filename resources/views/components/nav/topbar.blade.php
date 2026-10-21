@@ -2,49 +2,9 @@
     Üst çubuk — kardeş panellerdekiyle aynı yapı: marka, bölümler, boşluk,
     tema düğmesi, hesap menüsü.
 
-    Bölüm listesi TEK YERDE: buradan çiziliyor ve görünürlük yetkiye bağlı.
-    Şablonda da öyle.
+    Bölüm listesi TEK YERDE (App\View\UstCubuk) ve görünürlük yetkiye bağlı;
+    şablon yalnızca hazır listeyi çizer.
 --}}
-@php
-    $kullanici = auth()->user();
-
-    $bolumler = array_values(array_filter([
-        [
-            'url' => route('teklif.create'),
-            'label' => 'Teklifler',
-            'active' => request()->routeIs('teklif.*'),
-        ],
-        /*
-         * KAYNAKLAR: bilgi bankası ve fiyat listesi tek girdide, iki sekmede.
-         * İkisi de Teklif AI'ın beslendiği kaynak; menüde ayrı ayrı durunca
-         * şerit telefonda sığmıyordu.
-         */
-        [
-            'url' => route('bilgi-bankasi.index'),
-            'label' => 'Kaynaklar',
-            'active' => request()->routeIs('bilgi-bankasi.*', 'fiyatlar.*'),
-        ],
-
-        $kullanici?->isAdmin() ? [
-            'url' => route('admin.kullanicilar.index'),
-            'label' => 'Kullanıcılar',
-            'active' => request()->routeIs('admin.kullanicilar.*'),
-        ] : null,
-        $kullanici?->isAdmin() ? [
-            'url' => route('admin.kayitlar.denetim'),
-            'label' => 'Kayıtlar',
-            /* İstatistikler de bu ailenin sekmesi (bkz. components/logs/tabs). */
-            'active' => request()->routeIs('admin.kayitlar.*', 'admin.istatistikler.*'),
-        ] : null,
-        $kullanici?->isAdmin() ? [
-            'url' => route('admin.ayarlar.index'),
-            'label' => 'Ayarlar',
-            /* API jetonları Ayarlar'ın sekmesi; şeritte ayrı girdisi yok. */
-            'active' => request()->routeIs('admin.ayarlar.*', 'admin.api-jetonlari.*'),
-        ] : null,
-    ]));
-@endphp
-
 <header class="topbar">
     {{-- Ad tek yerden gelir: config('app.name'). --}}
     <a href="{{ route('teklif.create') }}" class="topbar__mark"
