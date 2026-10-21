@@ -48,8 +48,8 @@ Adlar `ONEK` ile başlar (varsayılan `satis`); aynı sunucuda ikinci kurulum on
 
 | Hacim | İçerik |
 |---|---|
-| `satis_storage` | `storage/app`: APP_KEY (verilmediyse), ilk parola dosyası, Ayarlar → Veritabanı'nın bağlantı dosyası (`veritabani/`), şirkete özgü istem ve site sayfaları (`sirket/`) |
-| `satis_veritabani` | db servisinin veri dizini — kullanıcılar, konuşmalar, fiyat kalemleri, denetim kaydı |
+| `satis_storage` | `storage/app`: APP_KEY (verilmediyse), ilk parola dosyası, Ayarlar → Veritabanı'nın bağlantı dosyası (`database/`), şirkete özgü istem ve site sayfaları (`sirket/`) |
+| `satis_database` | db servisinin veri dizini — kullanıcılar, konuşmalar, fiyat kalemleri, denetim kaydı |
 | `satis_logs` | `storage/logs` |
 | `satis-chroma-data` | Chroma'nın vektör deposu (`CHROMA_HACMI`) |
 
@@ -77,22 +77,22 @@ panelin Ayarlar ekranına girmez.
 ### Şirkete özgü ayarlar
 
 Depoda hiçbir şirketin adı, sitesi ya da iş kuralı durmaz; hepsi kurulumdan gelir
-(`config/sirket.php`). Hiçbiri verilmezse panel genel bir istemle çalışır ve site
+(`config/company.php`). Hiçbiri verilmezse panel genel bir istemle çalışır ve site
 taraması atlanır.
 
 | Ayar | Ne |
 |---|---|
 | `SIRKET_ADI` | teklif isteminde asistanın adına çalıştığı şirket; boşsa ad geçmez |
 | `SIRKET_SITESI` | kurumsal sitenin kök adresi; `bilgi:siteden` sayfaları buna göre okur, siteden gelen kayıtların kaynak etiketi bunun alan adıdır (`www.` atılır) |
-| `storage/app/sirket/teklif-istemi.txt` | şirkete özgü teklif istemi; varsa genel istemin **yerine** geçer. `{fiyat_baglami}`, `{bilgi_baglami}`, `{kosullar}`, `{talep}` yer tutucularının dördü de olmalı, biri eksikse dosya kullanılmaz ve günlüğe uyarı düşer |
-| `storage/app/sirket/site-sayfalari.json` | `bilgi:siteden`'in okuyacağı sayfalar: `{"/yol": {"baslik": "...", "kategori": "..."}}`; anahtar göreli yol ya da tam adres. Dosya yoksa tur hiçbir kayda dokunmadan biter |
+| `storage/app/company/quote-prompt.txt` | şirkete özgü teklif istemi; varsa genel istemin **yerine** geçer. `{fiyat_baglami}`, `{bilgi_baglami}`, `{kosullar}`, `{talep}` yer tutucularının dördü de olmalı, biri eksikse dosya kullanılmaz ve günlüğe uyarı düşer |
+| `storage/app/company/site-pages.json` | `bilgi:siteden`'in okuyacağı sayfalar: `{"/yol": {"baslik": "...", "kategori": "..."}}`; anahtar göreli yol ya da tam adres. Dosya yoksa tur hiçbir kayda dokunmadan biter |
 
 İki dosya storage hacmindedir (`satis_storage`): depoya ve imaja girmez, yeniden
 dağıtımda yerinde kalır, her kullanımda yeniden okunur (yeniden başlatma gerekmez).
 Panel `satis` kullanıcısıyla okur:
 
-    docker compose cp teklif-istemi.txt panel:/uygulama/storage/app/sirket/teklif-istemi.txt
-    docker compose exec panel chown -R satis:satis /uygulama/storage/app/sirket
+    docker compose cp quote-prompt.txt panel:/uygulama/storage/app/company/quote-prompt.txt
+    docker compose exec panel chown -R satis:satis /uygulama/storage/app/company
 
 Ortam değişkeni değil dosya, çünkü istem çok satırlı ve uzun: `.env`'de ve platformların
 değişken ekranında tırnak ve satır sonu sorunu çıkarırdı.
@@ -126,14 +126,14 @@ Açılışta panel kapalıyken şu anki veritabanı hedefe kopyalanır ve her ta
 sayısı iki tarafta karşılaştırılır. Bir adım tutmazsa panel şu anki veritabanıyla açılır
 ve sebep sekmede görünür.
 
-Panelden tanımlanan bağlantı `storage/app/veritabani/baglanti.json` dosyasında APP_KEY ile
-şifreli durur ve ortamdaki `DB_*` değerlerinin yerine geçer. `durum.json` taşımanın
-aşamasını tutar ve sır içermez. Yeniden başlatmayı konteyner içindeki `dc-yeniden-baslat`
+Panelden tanımlanan bağlantı `storage/app/database/connection.json` dosyasında APP_KEY ile
+şifreli durur ve ortamdaki `DB_*` değerlerinin yerine geçer. `state.json` taşımanın
+aşamasını tutar ve sır içermez. Yeniden başlatmayı konteyner içindeki `dc-restart`
 yapar; bunun için yeniden başlatma politikası **`unless-stopped`** olmalı (compose'ta öyle).
 
 Taşıma bittikten sonra eski veritabanına **kendiliğinden dönülmez**; taşıma anındaki
 hâliyle durur. Bilerek dönmek için: uzak veritabanının dökümünü eskisine yükleyin,
-sonra `storage/app/veritabani` altındaki `baglanti.json` ve `durum.json`'u silip
+sonra `storage/app/database` altındaki `connection.json` ve `state.json`'u silip
 konteyneri yeniden başlatın. Dökümü yüklemezseniz taşımadan sonraki her şey kaybolur.
 
 Chroma taşınmaz: bilgi bankası kendi hacminde kalır.
@@ -145,11 +145,11 @@ APP_KEY değişirse bağlantı dosyası çözülemez ve panel açılmaz.
 
 Kullanıcı tablosu boşsa başlatıcı bir yönetici açar (`PANEL_EMAIL`; adres verilmezse
 hesap açılmaz). `PANEL_PASSWORD` boşsa parola **rastgele üretilir** ve
-`storage/app/ilk-parola.txt` içine yazılır (günlüğe basılmaz). Sabit bir varsayılan parola konulmaz: imajı
+`storage/app/initial-password.txt` içine yazılır (günlüğe basılmaz). Sabit bir varsayılan parola konulmaz: imajı
 kuran herkeste aynı giriş bulunurdu. Aynı açılışta fiyat listesi de yüklenir
 (`DatabaseSeeder`).
 
-    docker compose exec panel cat /uygulama/storage/app/ilk-parola.txt
+    docker compose exec panel cat /uygulama/storage/app/initial-password.txt
 
 Giriş yapıp parolayı değiştirdikten sonra o dosyayı silin.
 
@@ -162,7 +162,7 @@ Bir platformda: yeniden dağıtın (platform depoyu çekip derler). Göçler her
 `--isolated` ile koşar; iki örnek aynı anda kalksa bile bir kez çalışır.
 
 GitHub Actions her main'de imajı derleyip `ghcr.io/mustafa-ozen95/satis` altına da
-yükler (`.github/workflows/imaj.yml`): hazır imaj isteyen kurulum `docker/Dockerfile`'ı
+yükler (`.github/workflows/image.yml`): hazır imaj isteyen kurulum `docker/Dockerfile`'ı
 derlemek yerine onu kullanabilir.
 
 ### Güncelleme kontrolü
@@ -178,7 +178,7 @@ Ekran **yalnızca bakar**; güncelleme sunucudan, yedekle ve onayla yapılır.
   özelse `GUNCELLEME_JETONU` salt okunur bir jeton olmalı (fine-grained, yalnız panel depoları,
   Contents ve Actions: read). Erişilemezse kontrol "hata" der, panelin başka yeri etkilenmez.
 - Çalışan sürüm derlemede imaja yazılır (`ARG SURUM`, iş akışı commit'i verir). Derlemeye commit
-  vermeyen platformlarda (NineDeploy gibi) bağlamdaki `.git`'ten okunur (`docker/surum-oku.sh`;
+  vermeyen platformlarda (NineDeploy gibi) bağlamdaki `.git`'ten okunur (`docker/version-read.sh`;
   `.dockerignore` yalnız `HEAD` ve ref'leri alır).
 - Panel GitHub'a çıkamıyorsa (kapalı ağ) kontrol "erişilemedi" der.
 
@@ -188,8 +188,8 @@ Ekran **yalnızca bakar**; güncelleme sunucudan, yedekle ve onayla yapılır.
 Ayarlar → Sertifika, sunucudaki sertifika ajanının durumunu gösterir ve ona tur isteği
 bırakır (`/etc/dc/sertifika-durum.json`, `/etc/dc/sertifika-panel`). Standart kurulumda
 TLS'i vekil yönettiği için bu dosyalar bağlı değildir; sekme "bilinmiyor" der ve
-düğmeler çalışmaz. Depodaki `sertifika.sh`, `sertifika-ajan.sh` ve
-`docker/sertifika-kur.sh`, önünde vekil olmadan TLS'i panelin kendisinin bitirdiği kurulum
+düğmeler çalışmaz. Depodaki `certificate.sh`, `certificate-agent.sh` ve
+`docker/certificate-setup.sh`, önünde vekil olmadan TLS'i panelin kendisinin bitirdiği kurulum
 içindir.
 
 

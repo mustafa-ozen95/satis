@@ -70,7 +70,7 @@ same file on every platform). Details and variables: `docker/README.md`,
 No company name, website or business rule lives in the repository: the company
 name and site come from the environment (`SIRKET_ADI`, `SIRKET_SITESI`), a
 company-specific quotation prompt and the site pages to import are optional
-files under `storage/app/sirket/` (see `docker/README.md`). Without them the
+files under `storage/app/company/` (see `docker/README.md`). Without them the
 panel uses a generic prompt and skips the site import.
 
 

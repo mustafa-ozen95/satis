@@ -63,7 +63,7 @@ Ayrıntı ve değişkenler: `docker/README.md`, `.env.example`.
 
 Depoda hiçbir şirketin adı, sitesi ya da iş kuralı durmaz: şirket adı ve site
 ortamdan gelir (`SIRKET_ADI`, `SIRKET_SITESI`), şirkete özgü teklif istemi ve
-siteden okunacak sayfalar `storage/app/sirket/` altındaki isteğe bağlı
+siteden okunacak sayfalar `storage/app/company/` altındaki isteğe bağlı
 dosyalardır (bkz. `docker/README.md`). Bunlar yoksa panel genel bir istemle
 çalışır ve site taramasını atlar.
 

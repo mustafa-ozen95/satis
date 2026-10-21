@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Schema;
  * birimde" sorusu buradan yanıtlanamaz. Göç dizeyi rol kaydına çevirir.
  *
  * Slug'lar kardeş panellerde de BİLEREK AYNI: merkez rol slug'ını gönderiyor ve
- * eşitleme onu buradaki karşılığına bağlıyor (bkz. KimlikEsitleyici).
+ * eşitleme onu buradaki karşılığına bağlıyor (bkz. IdentitySyncer).
  *
  * YETKİ ROLDEN TÜRETİLMEZ. Bu panelde ne yapılabileceğini kişiye özel
  * bayraklar söylüyor (perm_teklif/perm_bilgi/perm_fiyat); rol kimliğin

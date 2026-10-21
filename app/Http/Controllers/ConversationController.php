@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Teklif\MesajRequest;
-use App\Http\Requests\Teklif\TalepRequest;
-use App\Http\Requests\Teklif\TopluSilRequest;
-use App\Jobs\GenerateTeklifJob;
+use App\Http\Requests\Quote\BulkDeleteRequest;
+use App\Http\Requests\Quote\DemandRequest;
+use App\Http\Requests\Quote\MessageRequest;
+use App\Jobs\GenerateQuoteJob;
 use App\Models\Conversation;
 use App\Models\PriceItem;
 use App\Models\User;
@@ -36,7 +36,7 @@ class ConversationController extends Controller
 
         $teklifler = $this->tekliflerim($request);
 
-        return view('teklif.index', [
+        return view('quote.index', [
             'tekliflerim' => $teklifler,
             'devamiVar' => $teklifler->isNotEmpty()
                 && $this->teklifSorgusu($request)->where('id', '<', $teklifler->last()->id)->exists(),
@@ -46,7 +46,7 @@ class ConversationController extends Controller
         ]);
     }
 
-    public function store(TalepRequest $request): RedirectResponse
+    public function store(DemandRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -61,7 +61,7 @@ class ConversationController extends Controller
 
         app(ActivityRecorder::class)->kaydet('teklif_olustur', 'Teklif üretimi başlatıldı', $conversation);
 
-        GenerateTeklifJob::dispatch($conversation, $validated['talep']);
+        GenerateQuoteJob::dispatch($conversation, $validated['talep']);
 
         return redirect()->route('teklif.show', $conversation);
     }
@@ -80,7 +80,7 @@ class ConversationController extends Controller
 
         $teklifler = $this->tekliflerim($request);
 
-        return view('teklif.index', [
+        return view('quote.index', [
             'tekliflerim' => $teklifler,
             'devamiVar' => $teklifler->isNotEmpty()
                 && $this->teklifSorgusu($request)->where('id', '<', $teklifler->last()->id)->exists(),
@@ -92,9 +92,9 @@ class ConversationController extends Controller
 
     /**
      * Sohbete devam mesajı: yeni mesaj kutusundan gönderilir, aynı job +
-     * durum/polling mekanizmasını kullanır (bkz. GenerateTeklifJob).
+     * durum/polling mekanizmasını kullanır (bkz. GenerateQuoteJob).
      */
-    public function reply(MesajRequest $request, Conversation $conversation): RedirectResponse
+    public function reply(MessageRequest $request, Conversation $conversation): RedirectResponse
     {
         $this->authorize('reply', $conversation); // ConversationPolicy@reply
 
@@ -112,7 +112,7 @@ class ConversationController extends Controller
 
         $conversation->update(['durum' => 'bekliyor', 'hata_mesaji' => null]);
 
-        GenerateTeklifJob::dispatch($conversation, $validated['mesaj']);
+        GenerateQuoteJob::dispatch($conversation, $validated['mesaj']);
 
         return redirect()->route('teklif.show', $conversation);
     }
@@ -143,7 +143,7 @@ class ConversationController extends Controller
     /**
      * Sol sütundaki toplu seçim şeridi (data-bulk-* sözleşmesi, tasarim.js).
      */
-    public function bulkDestroy(TopluSilRequest $request): RedirectResponse
+    public function bulkDestroy(BulkDeleteRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -224,7 +224,7 @@ class ConversationController extends Controller
         $oncesi = $request->integer('oncesi') ?: null;
         $teklifler = $this->tekliflerim($request, $oncesi);
 
-        return view('teklif.partials.satirlar', [
+        return view('quote.partials.rows', [
             'tekliflerim' => $teklifler,
             'secili' => null,
             'devamiVar' => $teklifler->isNotEmpty()

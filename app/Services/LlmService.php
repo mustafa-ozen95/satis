@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Support\Sirket;
+use App\Support\Company;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -52,7 +52,7 @@ class LlmService
      */
     public static function sistemIstemi(): string
     {
-        $ad = Sirket::ad();
+        $ad = Company::ad();
 
         $kimlik = $ad === ''
             ? 'Sen bir satış teklif asistanısın. '

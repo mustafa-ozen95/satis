@@ -12,9 +12,9 @@
 
     {{--
         Tema çerezinin alan adı. Merkez ve paneller ayrı köklerdir; üst alan
-        adı verilince seçim hepsinde paylaşılır (bkz. config/tema.php).
+        adı verilince seçim hepsinde paylaşılır (bkz. config/theme.php).
     --}}
-    <meta name="tema-alan" content="{{ config('tema.cerez_alani') }}">
+    <meta name="tema-alan" content="{{ config('theme.cerez_alani') }}">
     <meta name="robots" content="noindex, nofollow">
 
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
@@ -38,7 +38,7 @@
 <body>
 <div class="shell">
     <x-nav.topbar />
-    <x-ui.guncelleme-uyarisi />
+    <x-ui.update-warning />
 
     {{ $slot }}
 </div>

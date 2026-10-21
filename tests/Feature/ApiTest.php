@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Jobs\GenerateTeklifJob;
+use App\Jobs\GenerateQuoteJob;
 use App\Models\ApiToken;
-use App\Models\BilgiKaydi;
+use App\Models\KnowledgeRecord;
 use App\Models\PriceItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -69,7 +69,7 @@ class ApiTest extends TestCase
     {
         /* Sahibi bilgi bankasını görebiliyor ama jetonun listesinde yok. */
         [, $jeton] = $this->jeton(['fiyat' => ['view']]);
-        BilgiKaydi::create(['baslik' => 'Bir', 'kategori' => 'Alan', 'metin' => 'metin']);
+        KnowledgeRecord::create(['baslik' => 'Bir', 'kategori' => 'Alan', 'metin' => 'metin']);
 
         $this->getJson('/api/v1/bilgi', $this->istek($jeton))->assertForbidden();
     }
@@ -122,7 +122,7 @@ class ApiTest extends TestCase
             ->assertStatus(202)
             ->assertJsonPath('data.durum', 'bekliyor');
 
-        Queue::assertPushed(GenerateTeklifJob::class);
+        Queue::assertPushed(GenerateQuoteJob::class);
 
         /* Kayıt SAHİPLİDİR: "kim istedi" sorusu sonradan sorulacak. */
         $this->assertDatabaseHas('conversations', [

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Api\BilgiApiController;
-use App\Http\Controllers\Api\FiyatApiController;
-use App\Http\Controllers\Api\KimlikTazeleController;
-use App\Http\Controllers\Api\TeklifApiController;
+use App\Http\Controllers\Api\IdentityRefreshController;
+use App\Http\Controllers\Api\KnowledgeApiController;
+use App\Http\Controllers\Api\PriceApiController;
+use App\Http\Controllers\Api\QuoteApiController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,13 +35,13 @@ Route::middleware(['auth:api', 'throttle:api'])
     ->prefix('v1')
     ->name('api.v1.')
     ->group(function (): void {
-        Route::get('fiyatlar', [FiyatApiController::class, 'index'])->name('fiyatlar.index');
-        Route::get('fiyatlar/{fiyat}', [FiyatApiController::class, 'show'])->name('fiyatlar.show');
+        Route::get('fiyatlar', [PriceApiController::class, 'index'])->name('fiyatlar.index');
+        Route::get('fiyatlar/{fiyat}', [PriceApiController::class, 'show'])->name('fiyatlar.show');
 
-        Route::get('bilgi', [BilgiApiController::class, 'index'])->name('bilgi.index');
+        Route::get('bilgi', [KnowledgeApiController::class, 'index'])->name('bilgi.index');
 
-        Route::post('teklif', [TeklifApiController::class, 'store'])->name('teklif.store');
-        Route::get('teklif/{teklif}', [TeklifApiController::class, 'show'])->name('teklif.show');
+        Route::post('teklif', [QuoteApiController::class, 'store'])->name('teklif.store');
+        Route::get('teklif/{teklif}', [QuoteApiController::class, 'show'])->name('teklif.show');
     });
 
 /*
@@ -53,10 +53,10 @@ Route::middleware(['auth:api', 'throttle:api'])
  *
  * Jeton gerektirmez: kimlik doğrulaması istek gövdesinin HMAC imzasıdır.
  * Gelen veriye GÜVENİLMEZ; panel doğruyu merkezden kendi sorar
- * (bkz. KimlikTazeleController).
+ * (bkz. IdentityRefreshController).
  *
  * Hız sınırı var: imza tutmasa bile bu uç merkeze bir istek attırabilir.
  */
-Route::post('kimlik/tazele', KimlikTazeleController::class)
+Route::post('kimlik/tazele', IdentityRefreshController::class)
     ->middleware('throttle:60,1')
     ->name('api.kimlik.tazele');

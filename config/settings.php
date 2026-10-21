@@ -91,7 +91,7 @@ return [
                 .'işidir. İstemci kimliği ve sırrı kurulumun ortam değişkenlerindedir.',
 
             'settings' => [
-                'kimlik.acik' => [
+                'identity.acik' => [
                     'label' => 'Merkezle giriş',
                     'hint' => 'Kapalıyken giriş ekranında düğme çizilmez ve uçlar 404 döner. '
                         .'Panelin kendi parola girişi her hâlükârda açık kalır.',
@@ -99,7 +99,7 @@ return [
                     'rules' => ['boolean'],
                 ],
 
-                'kimlik.yonetici_devri' => [
+                'identity.yonetici_devri' => [
                     'label' => 'Merkezdeki yönetici burada da yönetici olsun',
                     'hint' => 'KAPALI TUTUN. Açıkken merkezde rol dağıtabilen biri, buradaki '
                         .'hiçbir yöneticinin haberi olmadan kendini burada da yönetici yapabilir.',
@@ -107,7 +107,7 @@ return [
                     'rules' => ['boolean'],
                 ],
 
-                'kimlik.dogrulama_dakika' => [
+                'identity.dogrulama_dakika' => [
                     'label' => 'Merkeze sorma aralığı',
                     'hint' => '"Erişimi kalkan biri en fazla ne kadar daha içeride kalabilir" '
                         .'sorusunun yanıtı. Her istekte sorulmaz; yanıt kullanıcı başına '
@@ -200,7 +200,7 @@ return [
                 .'Model bunları uydurmaz; burada ne yazıyorsa teklifte o yazar.',
 
             'settings' => [
-                'teklif.kdv_orani' => [
+                'quote.kdv_orani' => [
                     'label' => 'KDV oranı',
                     'hint' => 'Fiyatı "+KDV" olan kalemlerde hesap bu oranla yapılır. '
                         .'Bilgi bankasındaki ödeme koşullarıyla aynı olmalı.',
@@ -209,7 +209,7 @@ return [
                     'rules' => ['required', 'integer', 'between:0,100'],
                 ],
 
-                'teklif.hizmet_suresi' => [
+                'quote.hizmet_suresi' => [
                     'label' => 'Hizmet süresi / faturalama',
                     'hint' => 'Teklifte "Hizmet süresi" satırı olarak yazılır. '
                         .'Taahhütlü çalışılıyorsa burada yazmalı.',
@@ -217,14 +217,14 @@ return [
                     'rules' => ['required', 'string', 'max:300'],
                 ],
 
-                'teklif.kurulum_suresi' => [
+                'quote.kurulum_suresi' => [
                     'label' => 'Kurulum / teslim süresi',
                     'hint' => 'Teklifte "Kurulum / teslim süresi" satırı olarak yazılır.',
                     'type' => 'string',
                     'rules' => ['required', 'string', 'max:300'],
                 ],
 
-                'teklif.gecerlilik_gun' => [
+                'quote.gecerlilik_gun' => [
                     'label' => 'Teklif geçerlilik süresi',
                     'hint' => 'Teklifin kaç gün geçerli olduğu.',
                     'unit' => 'gün',

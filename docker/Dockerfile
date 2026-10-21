@@ -134,11 +134,11 @@ COPY --from=varliklar --chown=satis:satis /uygulama/public/build ./public/build
 COPY docker/rootfs/ /
 
 # PHP yapılandırmaları sürüm numaralı dizinlerde durur; ARG ile yerleştirilir.
-RUN cp /etc/satis/php.ini /etc/php/${PHP_VERSION}/fpm/conf.d/99-satis.ini \
- && cp /etc/satis/php.ini /etc/php/${PHP_VERSION}/cli/conf.d/99-satis.ini \
+RUN cp /etc/sales/php.ini /etc/php/${PHP_VERSION}/fpm/conf.d/99-sales.ini \
+ && cp /etc/sales/php.ini /etc/php/${PHP_VERSION}/cli/conf.d/99-sales.ini \
  && rm -f /etc/php/${PHP_VERSION}/fpm/pool.d/www.conf \
- && cp /etc/satis/php-fpm-pool.conf /etc/php/${PHP_VERSION}/fpm/pool.d/satis.conf \
- && chmod 0755 /usr/local/bin/satis-* /usr/local/bin/dc-* \
+ && cp /etc/sales/php-fpm-pool.conf /etc/php/${PHP_VERSION}/fpm/pool.d/sales.conf \
+ && chmod 0755 /usr/local/bin/sales-* /usr/local/bin/dc-* \
  && rm -f /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf \
  && mkdir -p storage/framework/{cache/data,sessions,views} storage/logs bootstrap/cache \
  && chown -R satis:satis storage bootstrap/cache \
@@ -160,7 +160,7 @@ ENV UYGULAMA_SURUMU=${SURUM}
 # SURUM verilmezse (NineDeploy gibi platformlar derlemeye commit vermez)
 # bağlamdaki .git'ten okunur ve /uygulama/SURUM'a yazılır; config önce
 # ortama, sonra bu dosyaya bakar. .git yoksa (zip) dosya boş kalır.
-RUN --mount=type=bind,target=/tmp/baglam sh /tmp/baglam/docker/surum-oku.sh > /uygulama/SURUM
+RUN --mount=type=bind,target=/tmp/baglam sh /tmp/baglam/docker/version-read.sh > /uygulama/SURUM
 
-ENTRYPOINT ["/usr/local/bin/satis-entrypoint"]
+ENTRYPOINT ["/usr/local/bin/sales-entrypoint"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

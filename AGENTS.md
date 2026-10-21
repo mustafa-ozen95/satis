@@ -1,12 +1,12 @@
 # Standartlar
 
-## ⛔ TASARIMA DOKUNMADAN ÖNCE: TASARIM.md
+## ⛔ TASARIMA DOKUNMADAN ÖNCE: DESIGN.md
 
 Bu panelin arayüzü KARDEŞ PANELLERLE ORTAKTIR. CSS dosyaları, sayfa kabuğu, üst
 çubuk, giriş ekranı ve `ui` bileşenleri byte byte aynıdır; biri değişecekse
 hepsi birlikte değişir.
 
-**Arayüzde bir şey değiştirmeden önce `TASARIM.md` dosyasını oku.** Yeni
+**Arayüzde bir şey değiştirmeden önce `DESIGN.md` dosyasını oku.** Yeni
 sınıf/renk/ölçü icat etme, var olan bileşenleri kullan, tek panelde
 "iyileştirme" yapma.
 
@@ -16,4 +16,4 @@ aynı liste iki dosyada durursa zamanla ayrışır ve hangisinin geçerli olduğ
 belirsizleşir.
 
 Çalışmaya başlamadan önce `CLAUDE.md`'yi okuyun; işletim tarafı (panel nerede
-koşuyor, nasıl güncellenir, sertifika nasıl kurulur) `DESTEK.md` içinde.
+koşuyor, nasıl güncellenir, sertifika nasıl kurulur) `SUPPORT.md` içinde.

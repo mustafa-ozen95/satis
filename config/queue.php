@@ -40,7 +40,7 @@ return [
 | iki kez ücretlendirilir ve sohbete iki yanıt düşer.
 |
 | Laravel'in varsayılanı 90 saniye; teklif işinin zaman aşımı 300, işçinin
-| sınırı 600 saniye (bkz. GenerateTeklifJob ve supervisord). Yeniden
+| sınırı 600 saniye (bkz. GenerateQuoteJob ve supervisord). Yeniden
 | denemeli bir tur 90 saniyeyi rahatça aşar.
 |
 | Kural: retry_after > işçi zaman aşımı.

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\BilgiKaydi;
+use App\Models\KnowledgeRecord;
 use App\Models\PriceItem;
-use App\Models\Rol;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\KnowledgeBaseService;
 use Illuminate\Database\Seeder;
@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
                 'name' => config('panel.ad'),
                 'email' => config('panel.email'),
                 'password' => Hash::make(config('panel.password')),
-                'rol_id' => Rol::where('slug', 'admin')->value('id'),
+                'rol_id' => Role::where('slug', 'admin')->value('id'),
             ]);
 
             $this->command?->info('İlk admin kullanıcısı otomatik oluşturuldu: '.config('panel.email'));
@@ -52,7 +52,7 @@ class DatabaseSeeder extends Seeder
          * sonradan kurar.
          */
         try {
-            if (BilgiKaydi::query()->doesntExist()) {
+            if (KnowledgeRecord::query()->doesntExist()) {
                 $this->call(KnowledgeBaseSeeder::class);
                 $this->command?->info('Bilgi bankası boştu, otomatik yüklendi.');
             }

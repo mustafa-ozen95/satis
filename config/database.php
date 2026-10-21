@@ -63,7 +63,7 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            // Oturumun saat dilimi; başlatıcı konteynerin saatini verir (bkz. satis-entrypoint).
+            // Oturumun saat dilimi; başlatıcı konteynerin saatini verir (bkz. sales-entrypoint).
             'timezone' => env('DB_TIMEZONE'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
@@ -85,7 +85,7 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            // Oturumun saat dilimi; başlatıcı konteynerin saatini verir (bkz. satis-entrypoint).
+            // Oturumun saat dilimi; başlatıcı konteynerin saatini verir (bkz. sales-entrypoint).
             'timezone' => env('DB_TIMEZONE'),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),

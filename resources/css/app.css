@@ -23,16 +23,16 @@
 @import './components/empty.css';
 @import './components/tabs.css';
 @import './components/toast.css';
-@import './components/kullanici-menu.css';
+@import './components/user-menu.css';
 @import './components/pagination.css';
-@import './components/ipucu.css';
+@import './components/hint.css';
 
 /*
  * Bu panele özel bileşenler: sohbet ekranı (teklif konuşmaları) ve pencere
  * gövdesi içi düzen. Ortak şablonda karşılıkları yok.
  */
-@import './components/sohbet.css';
-@import './components/modal-govde-ici.css';
-@import './components/satis.css';
+@import './components/chat.css';
+@import './components/modal-body-inner.css';
+@import './components/sales.css';
 
 @import './utilities.css';

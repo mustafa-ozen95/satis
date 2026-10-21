@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Auth\GirisRequest;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
 use App\Services\ActivityRecorder;
-use App\Services\Kimlik\MerkezIstemcisi;
+use App\Services\Identity\CenterClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +21,7 @@ use Illuminate\View\View;
  */
 class AuthController extends Controller
 {
-    public function showLogin(MerkezIstemcisi $merkez): View|RedirectResponse
+    public function showLogin(CenterClient $merkez): View|RedirectResponse
     {
         if (Auth::check()) {
             return redirect()->route('teklif.create');
@@ -30,11 +30,11 @@ class AuthController extends Controller
         /* Görünüm kardeş panellerle BİREBİR AYNI dosya; beklediği iki değer bunlar. */
         return view('auth.login', [
             'merkezAcik' => $merkez->acikMi(),
-            'merkezAd' => config('kimlik.ad'),
+            'merkezAd' => config('identity.ad'),
         ]);
     }
 
-    public function login(GirisRequest $request, ActivityRecorder $kayit): RedirectResponse
+    public function login(LoginRequest $request, ActivityRecorder $kayit): RedirectResponse
     {
         $credentials = $request->validated();
 
@@ -82,6 +82,6 @@ class AuthController extends Controller
 
     public function yetkisiz(): View
     {
-        return view('auth.yetkisiz');
+        return view('auth.unauthorized');
     }
 }

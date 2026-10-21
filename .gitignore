@@ -27,9 +27,9 @@ Homestead.yaml
 Thumbs.db
 
 # Kurulum yapılandırması: API anahtarları, istemci sırrı, APP_KEY. Depoya ASLA girmez.
-/satis.conf
+/sales.conf
 
-# TLS özel anahtarı ve sertifika turu dosyaları (sertifika.sh yazar). Depoya ASLA girmez.
+# TLS özel anahtarı ve sertifika turu dosyaları (certificate.sh yazar). Depoya ASLA girmez.
 /sertifika/
 docker-compose.override.yml
 # İmajda derlemede yazılır (docker/Dockerfile); depoya girmez.

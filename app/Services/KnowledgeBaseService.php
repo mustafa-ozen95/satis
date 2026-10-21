@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\BilgiKaydi;
+use App\Models\KnowledgeRecord;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -82,12 +82,12 @@ class KnowledgeBaseService
     /** Bilgi bankasındaki bütün kayıtlar — VERİTABANINDAN, dış servise sormadan. */
     public function listEntries(int $limit = 300): array
     {
-        return BilgiKaydi::query()
+        return KnowledgeRecord::query()
             ->orderBy('kategori')
             ->orderBy('baslik')
             ->limit($limit)
             ->get()
-            ->map(fn (BilgiKaydi $k): array => [
+            ->map(fn (KnowledgeRecord $k): array => [
                 'id' => $k->id,
                 'text' => $k->metin,
                 'title' => $k->baslik,
@@ -107,7 +107,7 @@ class KnowledgeBaseService
      */
     public function addEntry(string $text, string $title, string $category, string $source = 'manuel'): int
     {
-        $kayit = BilgiKaydi::create([
+        $kayit = KnowledgeRecord::create([
             'baslik' => $title,
             'kategori' => $category,
             'metin' => $text,
@@ -122,7 +122,7 @@ class KnowledgeBaseService
 
     public function updateEntry(int|string $entryId, string $text, string $title, string $category): void
     {
-        $kayit = BilgiKaydi::findOrFail($entryId);
+        $kayit = KnowledgeRecord::findOrFail($entryId);
 
         $kayit->update(['metin' => $text, 'baslik' => $title, 'kategori' => $category]);
 
@@ -131,7 +131,7 @@ class KnowledgeBaseService
 
     public function deleteEntry(int|string $entryId): void
     {
-        $kayit = BilgiKaydi::findOrFail($entryId);
+        $kayit = KnowledgeRecord::findOrFail($entryId);
 
         /*
          * İndeksten SİLMEYE ÇALIŞ, olmazsa devam et: asıl kayıt gitmeli.
@@ -157,7 +157,7 @@ class KnowledgeBaseService
      * Embedding ÜCRETLİ ve yavaş bir çağrı; metin değişmediyse yeniden
      * üretilmez (bkz. gomme).
      */
-    public function indeksle(BilgiKaydi $kayit): bool
+    public function indeksle(KnowledgeRecord $kayit): bool
     {
         try {
             $chromaId = $kayit->chroma_id ?? (string) Str::uuid();
@@ -270,7 +270,7 @@ class KnowledgeBaseService
             return [];
         }
 
-        return BilgiKaydi::query()
+        return KnowledgeRecord::query()
             ->where(function ($sorgu) use ($kelimeler): void {
                 foreach ($kelimeler as $kelime) {
                     $sorgu->orWhere(fn ($i) => $i->metinde($kelime));
@@ -278,7 +278,7 @@ class KnowledgeBaseService
             })
             ->limit($nResults)
             ->get()
-            ->map(fn (BilgiKaydi $k): array => [
+            ->map(fn (KnowledgeRecord $k): array => [
                 'text' => $k->metin,
                 'metadata' => ['title' => $k->baslik, 'category' => $k->kategori, 'source' => $k->kaynak],
                 'distance' => null,
@@ -427,6 +427,6 @@ class KnowledgeBaseService
 
         $this->koleksiyonuUnut();
 
-        BilgiKaydi::query()->update(['chroma_id' => null, 'indekslendi' => null]);
+        KnowledgeRecord::query()->update(['chroma_id' => null, 'indekslendi' => null]);
     }
 }

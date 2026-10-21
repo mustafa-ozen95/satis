@@ -1,17 +1,17 @@
 import * as bulk from './components/bulk.js';
-import * as yerindeDuzenle from './components/yerinde-duzenle.js';
+import * as yerindeDuzenle from './components/inline-edit.js';
 import * as columns from './components/columns.js';
 import * as confirmDialog from './components/confirm.js';
 import * as copy from './components/copy.js';
 import * as dialog from './components/dialog.js';
-import * as enterGonder from './components/enter-gonder.js';
-import * as kategori from './components/kategori.js';
-import * as kaydirarakGezin from './components/kaydirarak-gezin.js';
+import * as enterGonder from './components/enter-send.js';
+import * as kategori from './components/category.js';
+import * as kaydirarakGezin from './components/scrolling-navigate.js';
 import * as keyboard from './components/keyboard.js';
-import * as kullaniciMenu from './components/kullanici-menu.js';
+import * as kullaniciMenu from './components/user-menu.js';
 import * as navigation from './components/navigation.js';
-import * as teklifDaha from './components/teklif-daha.js';
-import * as teklifPolling from './components/teklif-polling.js';
+import * as teklifDaha from './components/quote-more.js';
+import * as teklifPolling from './components/quote-polling.js';
 import * as theme from './components/theme.js';
 import * as toast from './components/toast.js';
 

@@ -2,13 +2,16 @@
 
 namespace App\Providers;
 
+use App\Models\KnowledgeRecord;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Api\ApiTokenContext;
 use App\Services\Api\ApiTokenGuard;
 use App\Services\Api\TokenAbilityGate;
 use App\Services\Settings\SettingsRepository;
-use App\View\UstCubuk;
+use App\View\TopBar;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
@@ -42,6 +45,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Eski sınıf adları etkinlik kaydında (subject_type/konu_type) yazılı; zincir özeti de bu
+        // dizgiye bağlı. Takma ad eski adı korur, yeni adlı model eski satırları çözer.
+        Relation::morphMap([
+            'App\Models\BilgiKaydi' => KnowledgeRecord::class,
+            'App\Models\Rol' => Role::class,
+        ]);
+
         /*
          * Panelden değiştirilen ayarları config'in ÜZERİNE BİNDİR.
          *
@@ -57,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
          *
          * Laravel'in varsayılanı `pagination::tailwind`; bu panelde Tailwind
          * yok ve o şablonun SVG okları sınırsız boyda çizilir. Şerit ve
-         * biçemi kardeş panellerle birebir aynı (bkz. TASARIM.md).
+         * biçemi kardeş panellerle birebir aynı (bkz. DESIGN.md).
          */
         Paginator::defaultView('vendor.pagination.default');
         Paginator::defaultSimpleView('vendor.pagination.default');
@@ -101,8 +111,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('perm_bilgi', fn (User $user) => $user->isAdmin() || $user->perm_bilgi);
         Gate::define('perm_fiyat', fn (User $user) => $user->isAdmin() || $user->perm_fiyat);
 
-        // Üst çubuğun bölüm listesi (bkz. UstCubuk).
-        View::composer('components.nav.topbar', UstCubuk::class);
+        // Üst çubuğun bölüm listesi (bkz. TopBar).
+        View::composer('components.nav.topbar', TopBar::class);
 
         // Her view'da kullanılabilen ortak degiskenler (oturum kullanıcısı, bekleyen sifre istegi sayisi).
         // Bu composer bir sayfada birden fazla view/component render edilirken

@@ -69,7 +69,7 @@ Schedule::command('bilgi:indeksle')->hourly()->withoutOverlapping();
  * bankası eskiyor ve model müşteriye artık geçerli olmayan bir şey
  * söyleyebiliyor. Tur haftada bir sayfaları okur, değişeni günceller,
  * siteden kalkanı siler. Sayfa listesi kurulumdan gelir (bkz.
- * config/sirket.php); liste yoksa tur bir şey yapmadan biter.
+ * config/company.php); liste yoksa tur bir şey yapmadan biter.
  *
  * HAFTALIK YETER: sayfalar günde bir değişmiyor ve değişmeyen bir tur
  * yalnızca sayfaları indirmek demek — gömme çağrısı yalnızca gerçekten

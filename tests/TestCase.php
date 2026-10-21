@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 abstract class TestCase extends BaseTestCase
 {
     /**
-     * Sınamalar kurulumun şirket dosyalarını (storage/app/sirket/) GÖRMEZ:
+     * Sınamalar kurulumun şirket dosyalarını (storage/app/company/) GÖRMEZ:
      * depo bir kurulumun içinde koşturulursa canlı istem ya da site listesi
      * sınamaya karışmasın. Dosya isteyen sınama kendi geçici dosyasını verir.
      */
@@ -15,6 +15,6 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        config(['sirket.ad' => '', 'sirket.site' => '', 'sirket.istem_dosyasi' => '', 'sirket.site_sayfalari_dosyasi' => '']);
+        config(['company.ad' => '', 'company.site' => '', 'company.istem_dosyasi' => '', 'company.site_sayfalari_dosyasi' => '']);
     }
 }
