@@ -44,13 +44,13 @@ Satırlar **HMAC-SHA256 ile birbirine zincirlenir**: her satır bir öncekinin
 özetini taşır. Bir satırı sonradan değiştiren ya da silen zinciri kırar.
 
 ```sh
-docker exec satis php artisan denetim:dogrula
+docker exec satis php artisan audit:verify
 ```
 
 Zamanlayıcı bunu her gece 03:30'da koşturur. Çıktı "ZİNCİR KIRIK" diyorsa
 kayıt ÜZERİNDE OYNANMIŞ demektir — ya da satırlar elle silinmiştir.
 
-Anahtar ortamdaki `DENETIM_ANAHTARI` ve **APP_KEY'den ayrıdır**: aynı anahtar
+Anahtar ortamdaki `AUDIT_KEY` ve **APP_KEY'den ayrıdır**: aynı anahtar
 kullanılsaydı APP_KEY döndürüldüğü gün bütün geçmiş "kırık" görünürdü.
 
 Denetim satırı canlı bir ilişki değil **tarihsel bir kayıttır**: hesap
@@ -120,9 +120,9 @@ bir anahtara dönüştürür.
 Yedeklenecek iki şey var ve **birlikte** yedeklenmeli:
 
 - veritabanı (compose'taki `db` servisi ya da dışarıdaki MariaDB)
-- APP_KEY ve DENETIM_ANAHTARI (ortamda; APP_KEY boşsa `storage` hacmindeki
+- APP_KEY ve AUDIT_KEY (ortamda; APP_KEY boşsa `storage` hacmindeki
   `app-key.txt`)
 
 Anahtar olmadan yedekten dönülen veritabanında oturumlar açılmaz ve denetim
 zinciri doğrulanamaz. Bilgi bankasının vektör deposu (Chroma hacmi) veritabanından
-yeniden kurulabilir (`bilgi:indeksle`).
+yeniden kurulabilir (`knowledge:index`).

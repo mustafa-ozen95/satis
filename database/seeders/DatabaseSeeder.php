@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
 
         if (User::count() === 0 && filled(config('panel.email')) && filled(config('panel.password'))) {
             User::create([
-                'name' => config('panel.ad'),
+                'name' => config('panel.name'),
                 'email' => config('panel.email'),
                 'password' => Hash::make(config('panel.password')),
                 'rol_id' => Role::where('slug', 'admin')->value('id'),
@@ -48,7 +48,7 @@ class DatabaseSeeder extends Seeder
 
         /*
          * Bilgi bankası VERİTABANINDA: Gemini anahtarı olmasa da kayıtlar
-         * yazılır, yalnızca indeks eksik kalır ve `bilgi:indeksle` onu
+         * yazılır, yalnızca indeks eksik kalır ve `knowledge:index` onu
          * sonradan kurar.
          */
         try {

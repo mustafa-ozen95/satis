@@ -6,8 +6,8 @@
     öteki sessizce eski kalır ve liste, kaydırıldıkça biçim değiştirirdi.
 --}}
 @foreach ($tekliflerim as $teklif)
-      <div class="teklif-satiri">
-        <input type="checkbox" data-bulk-item name="secili_id[]" form="teklif-toplu-form" value="{{ $teklif->id }}" aria-label="&quot;{{ $teklif->ilk_talep }}&quot; seç">
+      <div class="quote-row">
+        <input type="checkbox" data-bulk-item name="secili_id[]" form="quote-bulk-form" value="{{ $teklif->id }}" aria-label="&quot;{{ $teklif->ilk_talep }}&quot; seç">
         {{--
           SATIR İKİ SATIRDIR.
           Başlık, tarih ve durum tek satırda yarışırken başlık üç harfe
@@ -15,12 +15,12 @@
           geriye neredeyse yer kalmıyordu. Başlık artık kendi
           satırında tam genişlikte; tarih ve durum altına, küçük ve sessiz.
         --}}
-        <a href="{{ route('teklif.show', $teklif) }}"
-           class="row-item teklif-baglanti @if ($teklif->okunmamisMi()) teklif-baglanti--okunmamis @endif"
+        <a href="{{ route('quote.show', $teklif) }}"
+           class="row-item quote-link @if ($teklif->isUnread()) quote-link--unread @endif"
            @if ($secili && $secili->id === $teklif->id) aria-selected="true" @endif>
-          <span class="teklif-baslik">
+          <span class="quote-title">
             <span
-              class="dot dot--{{ $teklif->durum === 'bekliyor' ? 'yellow' : ($teklif->durum === 'hata' ? 'red' : 'green') }} @if ($teklif->durum === 'bekliyor') dot--calisiyor @endif"
+              class="dot dot--{{ $teklif->durum === 'bekliyor' ? 'yellow' : ($teklif->durum === 'hata' ? 'red' : 'green') }} @if ($teklif->durum === 'bekliyor') dot--running @endif"
               aria-hidden="true"
             ></span>
             {{--
@@ -34,13 +34,13 @@
             <span class="row-item__label">{{ $teklif->ilk_talep }}</span>
           </span>
 
-          <span class="teklif-alt">
+          <span class="quote-footer">
             @if ($teklif->durum === 'bekliyor')
-              <span class="teklif-durum teklif-durum--calisiyor">Hazırlanıyor…</span>
+              <span class="quote-status quote-status--running">Hazırlanıyor…</span>
             @elseif ($teklif->durum === 'hata')
-              <span class="teklif-durum teklif-durum--hata">Hata</span>
-            @elseif ($teklif->okunmamisMi())
-              <span class="teklif-durum teklif-durum--yeni">Yeni yanıt</span>
+              <span class="quote-status quote-status--error">Hata</span>
+            @elseif ($teklif->isUnread())
+              <span class="quote-status quote-status--new">Yeni yanıt</span>
             @endif
 
             {{--
@@ -49,7 +49,7 @@
               istemiş" sorusu yanıtsız kalır.
             --}}
             @if (auth()->user()?->isAdmin() && $teklif->user_id !== auth()->id())
-              <span class="teklif-durum">{{ Str::before($teklif->user?->name ?? '?', ' ') }}</span>
+              <span class="quote-status">{{ Str::before($teklif->user?->name ?? '?', ' ') }}</span>
             @endif
 
             <span class="row-item__meta">{{ $teklif->created_at->format('d.m H:i') }}</span>
@@ -57,7 +57,7 @@
         </a>
         <button
           type="submit"
-          form="teklif-sil-{{ $teklif->id }}"
+          form="quote-delete-{{ $teklif->id }}"
           class="btn btn--icon btn--sm"
           title="Sil"
           data-confirm="&quot;{{ Str::limit($teklif->ilk_talep, 60) }}&quot; kalıcı olarak silinecek."
@@ -76,15 +76,15 @@
         seferde çizmek telefonda sayfayı kilitler. Sonraki on beş,
         buradaki düğmeyle gelir (bkz. js/components/quote-more.js).
 
-        `data-oncesi` son satırın kimliğidir: sayfa numarası değil İMLEÇ.
+        `data-before` son satırın kimliğidir: sayfa numarası değil İMLEÇ.
         Numarayla sayfalasaydık, aradaki bir teklif silindiğinde sonraki
         sayfa bir satır atlardı.
     --}}
-    <div class="teklif-daha" data-teklif-daha>
+    <div class="quote-more" data-quote-more>
         <button type="button" class="btn btn--ghost btn--block btn--sm"
-                data-teklif-daha-dugme
-                data-adres="{{ route('teklif.daha') }}"
-                data-oncesi="{{ $tekliflerim->last()->id }}">
+                data-quote-more-button
+                data-url="{{ route('quote.more') }}"
+                data-before="{{ $tekliflerim->last()->id }}">
             Devamını gör
         </button>
     </div>

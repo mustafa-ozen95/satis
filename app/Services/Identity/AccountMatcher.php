@@ -29,7 +29,7 @@ class AccountMatcher
     public const SAGLAYICI = 'kimlik';
 
     /** @param  array{sub: string, name: string, email: string, email_verified: bool}  $kimlik */
-    public function bul(array $kimlik): ?User
+    public function find(array $kimlik): ?User
     {
         $bag = UserIdentity::where('provider', self::SAGLAYICI)
             ->where('subject', $kimlik['sub'])
@@ -39,11 +39,11 @@ class AccountMatcher
             return $bag->user;
         }
 
-        return $kimlik['email_verified'] ? $this->epostayaGore($kimlik['email']) : null;
+        return $kimlik['email_verified'] ? $this->byEmail($kimlik['email']) : null;
     }
 
     /** İlk eşleşmeyi kalıcı hâle getirir. */
-    public function bagla(User $kullanici, array $kimlik): UserIdentity
+    public function link(User $kullanici, array $kimlik): UserIdentity
     {
         return UserIdentity::updateOrCreate(
             ['provider' => self::SAGLAYICI, 'subject' => $kimlik['sub']],
@@ -57,7 +57,7 @@ class AccountMatcher
      * Birden fazla hesap aynı adresi taşıyorsa hangisinin kastedildiği belli
      * değildir; tahmin etmek yanlış hesaba giriş demek olurdu.
      */
-    private function epostayaGore(string $eposta): ?User
+    private function byEmail(string $eposta): ?User
     {
         $adaylar = User::where('email', $eposta)->limit(2)->get();
 

@@ -30,13 +30,13 @@ class RelocationSourceTest extends TestCase
                 parent::__construct($dosya);
             }
 
-            public function bilgi(): array
+            public function info(): array
             {
                 return [...['kaynak' => 'ortam', 'host' => 'db', 'port' => '3306', 'database' => 'panel', 'username' => 'panel',
                     'surum' => '11.4.5-MariaDB', 'boyut' => 1, 'tablo' => 10, 'ozel' => 0], ...$this->sahteBilgi];
             }
 
-            protected function baglan(array $h): PDO
+            protected function connect(array $h): PDO
             {
                 throw new RuntimeException('sınamada hedefe bağlanılmaz: '.$h['host']);
             }
@@ -46,7 +46,7 @@ class RelocationSourceTest extends TestCase
     /** @return array<string, array{tamam: bool, ayrinti: string}> */
     private function maddeler(RemoteDatabase $v, array $hedef): array
     {
-        return collect($v->sina([...['host' => 'uzak.ornek.test', 'port' => 3306, 'database' => 'panel', 'username' => 'panel', 'password' => 'x'], ...$hedef]))
+        return collect($v->test([...['host' => 'uzak.ornek.test', 'port' => 3306, 'database' => 'panel', 'username' => 'panel', 'password' => 'x'], ...$hedef]))
             ->keyBy('ad')->all();
     }
 
@@ -65,7 +65,7 @@ class RelocationSourceTest extends TestCase
         $m = $this->maddeler($this->servis(['kaynak' => 'panel', 'host' => 'uzak1.ornek.test']), []);
 
         $this->assertFalse($m['Panel kurulumun veritabanında']['tamam']);
-        $this->assertFalse(RemoteDatabase::hepsiTamam(array_values($m)));
+        $this->assertFalse(RemoteDatabase::allOk(array_values($m)));
     }
 
     public function test_hedef_su_anki_veritabani_ise_hedefe_baglanilmaz(): void

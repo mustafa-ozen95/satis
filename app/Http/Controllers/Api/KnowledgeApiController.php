@@ -38,7 +38,7 @@ class KnowledgeApiController extends Controller implements HasMiddleware
 
         $sorgu = KnowledgeRecord::query()
             ->when($kategori !== '', fn ($s) => $s->where('kategori', $kategori))
-            ->when($ara !== '', fn ($s) => $s->metinde($ara))
+            ->when($ara !== '', fn ($s) => $s->inText($ara))
             ->orderBy('kategori')
             ->orderBy('baslik');
 

@@ -18,20 +18,20 @@ use RuntimeException;
 final class Company
 {
     /** Şirkete özgü istem dosyasının taşıması gereken yer tutucular. */
-    public const ISTEM_YER_TUTUCULARI = ['{fiyat_baglami}', '{bilgi_baglami}', '{kosullar}', '{talep}'];
+    public const PROMPT_PLACEHOLDERS = ['{price_context}', '{knowledge_context}', '{terms}', '{request}'];
 
     /** Site verilmemişse siteden gelen kayıtların kaynak etiketi. */
     private const VARSAYILAN_KAYNAK = 'kurumsal-site';
 
-    public static function ad(): string
+    public static function name(): string
     {
-        return trim((string) config('company.ad'));
+        return trim((string) config('company.name'));
     }
 
     /** Sitenin kök adresi, sondaki "/" olmadan; verilmemişse boş. */
-    public static function site(): string
+    public static function website(): string
     {
-        return rtrim(trim((string) config('company.site')), '/');
+        return rtrim(trim((string) config('company.website')), '/');
     }
 
     /**
@@ -41,9 +41,9 @@ final class Company
      * (elle yazılmış kayıt ezilmez, sitede kalmayan bölüm silinir). Sütun
      * 60 karakter.
      */
-    public static function siteKaynagi(): string
+    public static function siteSource(): string
     {
-        $alan = (string) parse_url(self::site(), PHP_URL_HOST);
+        $alan = (string) parse_url(self::website(), PHP_URL_HOST);
         $alan = (string) preg_replace('/^www\./i', '', mb_strtolower($alan));
 
         return $alan !== '' ? mb_substr($alan, 0, 60) : self::VARSAYILAN_KAYNAK;
@@ -56,16 +56,16 @@ final class Company
      * ya da talebi hiç görmeden teklif yazardı; o yüzden genel isteme düşülür
      * ve günlüğe uyarı yazılır.
      */
-    public static function istemSablonu(): ?string
+    public static function promptTemplate(): ?string
     {
-        $metin = self::dosya((string) config('company.istem_dosyasi'));
+        $metin = self::file((string) config('company.prompt_file'));
 
         if ($metin === null || trim($metin) === '') {
             return null;
         }
 
         $eksik = array_values(array_filter(
-            self::ISTEM_YER_TUTUCULARI,
+            self::PROMPT_PLACEHOLDERS,
             static fn (string $yer): bool => ! str_contains($metin, $yer),
         ));
 
@@ -79,16 +79,16 @@ final class Company
     }
 
     /**
-     * bilgi:siteden turunun sayfaları: tam adres → başlık ve kategori.
+     * knowledge:site turunun sayfaları: tam adres → başlık ve kategori.
      *
      * Dosya yoksa boş liste. Dosya VAR ama okunamıyorsa istisna: yanlış
      * yazılmış bir liste "sayfa yok" sayılsaydı tur sessizce atlanırdı.
      *
      * @return array<string, array{baslik: string, kategori: string}>
      */
-    public static function siteSayfalari(): array
+    public static function sitePages(): array
     {
-        $metin = self::dosya((string) config('company.site_sayfalari_dosyasi'));
+        $metin = self::file((string) config('company.site_pages_file'));
 
         if ($metin === null) {
             return [];
@@ -114,27 +114,27 @@ final class Company
                 throw new RuntimeException("Site sayfaları dosyasında \"{$yol}\" için baslik ve kategori gerekli.");
             }
 
-            $sayfalar[self::adres((string) $yol)] = ['baslik' => $baslik, 'kategori' => $kategori];
+            $sayfalar[self::url((string) $yol)] = ['baslik' => $baslik, 'kategori' => $kategori];
         }
 
         return $sayfalar;
     }
 
     /** Göreli yolu sitenin köküne ekler; tam adresi olduğu gibi bırakır. */
-    private static function adres(string $yol): string
+    private static function url(string $yol): string
     {
         if (preg_match('#^https?://#i', $yol) === 1) {
             return $yol;
         }
 
-        if (self::site() === '') {
-            throw new RuntimeException("Site sayfaları dosyasında göreli yol var (\"{$yol}\") ama SIRKET_SITESI verilmemiş.");
+        if (self::website() === '') {
+            throw new RuntimeException("Site sayfaları dosyasında göreli yol var (\"{$yol}\") ama COMPANY_WEBSITE verilmemiş.");
         }
 
-        return self::site().'/'.ltrim($yol, '/');
+        return self::website().'/'.ltrim($yol, '/');
     }
 
-    private static function dosya(string $yol): ?string
+    private static function file(string $yol): ?string
     {
         if ($yol === '' || ! is_file($yol)) {
             return null;

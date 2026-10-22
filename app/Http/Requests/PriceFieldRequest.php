@@ -32,7 +32,7 @@ class PriceFieldRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        $alan = (string) $this->input('alan');
+        $alan = (string) $this->input('field');
 
         /* Para birimi tam formda yok; kuralı burada, tek yerde duruyor. */
         /*
@@ -47,8 +47,8 @@ class PriceFieldRequest extends FormRequest
         ];
 
         return [
-            'alan' => ['required', 'string', 'in:'.implode(',', self::ALANLAR)],
-            'deger' => $kurallar[$alan] ?? ['required'],
+            'field' => ['required', 'string', 'in:'.implode(',', self::ALANLAR)],
+            'value' => $kurallar[$alan] ?? ['required'],
         ];
     }
 
@@ -56,7 +56,7 @@ class PriceFieldRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'deger' => match ((string) $this->input('alan')) {
+            'value' => match ((string) $this->input('field')) {
                 'category' => 'kategori',
                 'name' => 'ad',
                 'price' => 'fiyat',

@@ -33,7 +33,7 @@ class QuoteServiceTest extends TestCase
 
         $service = new QuoteService($llm, $kb);
 
-        $sonuc = $service->generateTeklif('2 adet sunucu istiyorum');
+        $sonuc = $service->generateQuote('2 adet sunucu istiyorum');
 
         $this->assertSame('Merhaba', $sonuc['musteri_maili']);
         $this->assertSame('Detay', $sonuc['ic_aciklama']);
@@ -52,7 +52,7 @@ class QuoteServiceTest extends TestCase
 
         $service = new QuoteService($llm, $kb);
 
-        $sonuc = $service->generateTeklif('talep');
+        $sonuc = $service->generateQuote('talep');
 
         $this->assertSame('Merhaba', $sonuc['musteri_maili']);
     }
@@ -67,7 +67,7 @@ class QuoteServiceTest extends TestCase
 
         $service = new QuoteService($llm, $kb);
 
-        $sonuc = $service->generateTeklif('talep');
+        $sonuc = $service->generateQuote('talep');
 
         $this->assertSame('bu json degil', $sonuc['musteri_maili']);
         $this->assertStringContainsString('JSON parse edilemedi', $sonuc['ic_aciklama']);
@@ -168,7 +168,7 @@ class QuoteServiceTest extends TestCase
         $kb = Mockery::mock(KnowledgeBaseService::class);
         $kb->shouldReceive('query')->once()->andReturn([]);
 
-        (new QuoteService($llm, $kb))->generateTeklif('talep');
+        (new QuoteService($llm, $kb))->generateQuote('talep');
 
         $this->assertIsArray($sema);
         $this->assertContains('musteri_maili', $sema['required']);
@@ -192,7 +192,7 @@ class QuoteServiceTest extends TestCase
         $kb = Mockery::mock(KnowledgeBaseService::class);
         $kb->shouldReceive('query')->once()->andReturn([]);
 
-        return (new QuoteService($llm, $kb))->generateTeklif($talep);
+        return (new QuoteService($llm, $kb))->generateQuote($talep);
     }
 
     public function test_generate_teklif_narrows_price_items_by_keyword(): void
@@ -208,7 +208,7 @@ class QuoteServiceTest extends TestCase
 
         $service = new QuoteService($llm, $kb);
 
-        $sonuc = $service->generateTeklif('backup yedekleme istiyorum');
+        $sonuc = $service->generateQuote('backup yedekleme istiyorum');
 
         // "backup"/"yedek" anahtar kelimesi sadece Backup kategorisini eslemeli.
         $this->assertSame(1, $sonuc['kullanilan_fiyat_kalemi_sayisi']);

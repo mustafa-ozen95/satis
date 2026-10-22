@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  *
  * Satırlar HMAC-SHA256 ile zincirlenir (bkz. Services\Activity\ActivityChain):
  * her satır bir öncekinin özetini taşır. Sonradan değiştirilen ya da silinen
- * bir satır zinciri kırar ve `denetim:dogrula` bunu söyler.
+ * bir satır zinciri kırar ve `audit:verify` bunu söyler.
  *
  * Tablo "kim kaç teklif üretti" sayacı olarak doğmuştu; istatistik ekranı
  * hâlâ `tur` alanına bakıyor ve o üç değer (teklif_olustur, fiyat_ekle,

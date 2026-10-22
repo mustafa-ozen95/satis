@@ -13,17 +13,17 @@ use Illuminate\Console\Command;
  * Zamanlayıcı her gece çağırır; sonuç önbellekte durur, ekran oradan okur.
  * Elle de çalıştırılabilir:
  *
- *     docker exec satis php artisan denetim:dogrula
+ *     docker exec satis php artisan audit:verify
  */
 class AuditVerifyCommand extends Command
 {
-    protected $signature = 'denetim:dogrula';
+    protected $signature = 'audit:verify';
 
     protected $description = 'Denetim kaydının hash zincirini doğrular';
 
     public function handle(ActivityChain $zincir): int
     {
-        $sonuc = $zincir->dogrula();
+        $sonuc = $zincir->verify();
 
         $this->components->info(sprintf(
             'Bakılan: %d · korumasız (zincirden önceki): %d',

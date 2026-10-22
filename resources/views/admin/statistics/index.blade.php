@@ -56,7 +56,7 @@
             <tbody>
               @foreach ($kullaniciAktivite as $kullanici)
               <tr>
-                <td data-label="Kullanıcı" class="satir-baslik">{{ $kullanici->name }}</td>
+                <td data-label="Kullanıcı" class="row-title">{{ $kullanici->name }}</td>
                 <td data-label="Teklif oluşturdu" class="table__cell--mono text-right">{{ $kullanici->teklif_sayisi }}</td>
                 <td data-label="Fiyat kalemi ekledi" class="table__cell--mono text-right">{{ $kullanici->fiyat_sayisi }}</td>
                 <td data-label="Bilgi bankası ekledi" class="table__cell--mono text-right">{{ $kullanici->bilgi_sayisi }}</td>

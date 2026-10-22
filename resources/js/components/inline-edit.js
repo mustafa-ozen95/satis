@@ -17,29 +17,29 @@ import { emit } from './toast.js';
  * (bkz. PriceFieldRequest). Buradaki iş yalnızca alanı gösterip değeri
  * göndermek; ekranda kilitlemek güvenlik değildir.
  */
-const HUCRE = 'td[data-alan]';
+const CELL = 'td[data-field]';
 
-let acikHucre = null;
+let openCell = null;
 
-function bitir(hucre, metin) {
-    hucre.textContent = metin;
-    hucre.classList.remove('hucre--duzenleniyor');
-    acikHucre = null;
+function finish(cell, text) {
+    cell.textContent = text;
+    cell.classList.remove('cell--editing');
+    openCell = null;
 }
 
-async function kaydet(hucre, deger) {
-    const { adres, alan, ham } = hucre.dataset;
+async function save(cell, value) {
+    const { url: address, field: field, raw: raw } = cell.dataset;
 
-    if (deger === ham) {
-        bitir(hucre, hucre.dataset.gosterim);
+    if (value === raw) {
+        finish(cell, cell.dataset.display);
 
         return;
     }
 
-    hucre.classList.add('hucre--bekliyor');
+    cell.classList.add('cell--pending');
 
     try {
-        const yanit = await fetch(adres, {
+        const response = await fetch(address, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -47,38 +47,38 @@ async function kaydet(hucre, deger) {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
             },
             credentials: 'same-origin',
-            body: JSON.stringify({ alan, deger }),
+            body: JSON.stringify({ field, value }),
         });
 
-        const veri = await yanit.json().catch(() => ({}));
+        const data = await response.json().catch(() => ({}));
 
-        if (! yanit.ok) {
+        if (! response.ok) {
             /*
              * Sunucu ne dediyse o gösterilir. "Bir hata oluştu" demek,
              * kullanıcıyı neyi düzelteceğini bilmeden bırakmaktır.
              */
-            throw new Error(veri.hata ?? 'Kaydedilemedi.');
+            throw new Error(data.error ?? 'Kaydedilemedi.');
         }
 
-        hucre.dataset.ham = veri.ham;
-        hucre.dataset.gosterim = veri.gosterim;
-        bitir(hucre, veri.gosterim);
-        emit(veri.mesaj ?? 'Kaydedildi.', 'success');
-    } catch (hata) {
-        bitir(hucre, hucre.dataset.gosterim);
-        emit(hata.message, 'danger');
+        cell.dataset.raw = data.raw;
+        cell.dataset.display = data.display;
+        finish(cell, data.display);
+        emit(data.message ?? 'Kaydedildi.', 'success');
+    } catch (error) {
+        finish(cell, cell.dataset.display);
+        emit(error.message, 'danger');
     } finally {
-        hucre.classList.remove('hucre--bekliyor');
+        cell.classList.remove('cell--pending');
     }
 }
 
-function ac(hucre) {
-    if (acikHucre !== null) {
+function open(cell) {
+    if (openCell !== null) {
         return;
     }
 
-    acikHucre = hucre;
-    hucre.classList.add('hucre--duzenleniyor');
+    openCell = cell;
+    cell.classList.add('cell--editing');
 
     /*
      * KATEGORİ GİBİ ALANLAR SEÇİLİR, YAZILMAZ.
@@ -87,95 +87,95 @@ function ac(hucre) {
      * ile "IP/Network" ayrı iki kategori). Hücre seçeneklerini kendisi
      * taşıyor; liste sunucudan geliyor ve ekranla aynı kaynaktan besleniyor.
      */
-    const secenekler = hucre.dataset.secenekler
-        ? JSON.parse(hucre.dataset.secenekler)
+    const options = cell.dataset.options
+        ? JSON.parse(cell.dataset.options)
         : null;
 
-    const alan = secenekler
+    const field = options
         ? document.createElement('select')
         : document.createElement('input');
 
-    alan.className = 'input input--hucre';
+    field.className = 'input input--cell';
 
-    if (secenekler) {
-        for (const secenek of secenekler) {
-            const secim = document.createElement('option');
-            secim.value = secenek;
-            secim.textContent = secenek;
-            alan.append(secim);
+    if (options) {
+        for (const option of options) {
+            const selection = document.createElement('option');
+            selection.value = option;
+            selection.textContent = option;
+            field.append(selection);
         }
 
         /* Kayıtlı değer listede yoksa yine de seçilebilir kalsın. */
-        if (!secenekler.includes(hucre.dataset.ham)) {
-            const mevcut = document.createElement('option');
-            mevcut.value = hucre.dataset.ham;
-            mevcut.textContent = hucre.dataset.ham;
-            alan.prepend(mevcut);
+        if (!options.includes(cell.dataset.raw)) {
+            const current = document.createElement('option');
+            current.value = cell.dataset.raw;
+            current.textContent = cell.dataset.raw;
+            field.prepend(current);
         }
     } else {
-        alan.type = hucre.dataset.tur === 'sayi' ? 'number' : 'text';
+        field.type = cell.dataset.type === 'number' ? 'number' : 'text';
 
-        if (alan.type === 'number') {
-            alan.step = '0.01';
-            alan.min = '0';
+        if (field.type === 'number') {
+            field.step = '0.01';
+            field.min = '0';
         }
     }
 
-    alan.value = hucre.dataset.ham;
+    field.value = cell.dataset.raw;
 
-    hucre.textContent = '';
-    hucre.append(alan);
-    alan.focus();
+    cell.textContent = '';
+    cell.append(field);
+    field.focus();
 
     /* Metin kutusunda içerik seçilir; listede seçilecek bir metin yok. */
-    if (typeof alan.select === 'function' && !secenekler) {
-        alan.select();
+    if (typeof field.select === 'function' && !options) {
+        field.select();
     }
 
-    let kapandi = false;
+    let closed = false;
 
-    const tamamla = (kaydedilsin) => {
-        if (kapandi) {
+    const complete = (shouldSave) => {
+        if (closed) {
             return;
         }
 
-        kapandi = true;
+        closed = true;
 
-        if (kaydedilsin) {
-            kaydet(hucre, alan.value.trim());
+        if (shouldSave) {
+            save(cell, field.value.trim());
         } else {
-            bitir(hucre, hucre.dataset.gosterim);
+            finish(cell, cell.dataset.display);
         }
     };
 
-    alan.addEventListener('keydown', (olay) => {
-        if (olay.key === 'Enter') {
-            olay.preventDefault();
-            tamamla(true);
+    field.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            complete(true);
         }
 
-        if (olay.key === 'Escape') {
-            olay.preventDefault();
-            tamamla(false);
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            complete(false);
         }
     });
 
     /* Listede seçim yapmak işin kendisidir; ayrıca odak çıkmasını beklemeye gerek yok. */
-    if (secenekler) {
-        alan.addEventListener('change', () => tamamla(true));
+    if (options) {
+        field.addEventListener('change', () => complete(true));
     }
 
     /* Odak çıkınca kaydedilir: kullanıcı başka bir hücreye geçtiğinde işi bitmiştir. */
-    alan.addEventListener('blur', () => tamamla(true));
+    field.addEventListener('blur', () => complete(true));
 }
 
 export function init() {
-    on('dblclick', HUCRE, (olay, hucre) => {
-        if (hucre.classList.contains('hucre--duzenleniyor')) {
+    on('dblclick', CELL, (event, cell) => {
+        if (cell.classList.contains('cell--editing')) {
             return;
         }
 
         window.getSelection()?.removeAllRanges();
-        ac(hucre);
+        open(cell);
     });
 }

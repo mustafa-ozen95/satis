@@ -22,19 +22,19 @@ use Illuminate\Console\Command;
  */
 class IdentitySyncCommand extends Command
 {
-    protected $signature = 'kimlik:esitle';
+    protected $signature = 'identity:sync';
 
     protected $description = 'Merkezdeki hesap durumlarını bu panele işler';
 
     public function handle(CenterClient $merkez, IdentitySyncer $esitleyici): int
     {
-        if (! $merkez->acikMi()) {
+        if (! $merkez->isEnabled()) {
             $this->components->info('Merkezle giriş kapalı; eşitlenecek bir şey yok.');
 
             return self::SUCCESS;
         }
 
-        $sonuc = $esitleyici->esitle();
+        $sonuc = $esitleyici->sync();
 
         $this->components->info(sprintf(
             'Sorulan: %d · kapatılan: %d · açılan: %d',

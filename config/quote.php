@@ -35,7 +35,7 @@ return [
      *
      * Bilgi bankasındaki "Genel Ödeme ve KDV Koşulları" kaydıyla aynı olmalı.
      */
-    'kdv_orani' => 20,
+    'vat_rate' => 20,
 
     /*
      * Hizmet süresi ve faturalama dönemi.
@@ -44,14 +44,14 @@ return [
      * çalışma için satış ekibi ayrıca fiyatlandırır — model kendiliğinden
      * "12 ay taahhüt" gibi bir süre uyduramasın diye cümle burada duruyor.
      */
-    'hizmet_suresi' => 'Aylık dönem hâlindedir ve dönem sonunda yenilenir. '
+    'service_time' => 'Aylık dönem hâlindedir ve dönem sonunda yenilenir. '
         .'Farklı bir süre veya taahhüt talep edilirse satış ekibi ayrıca fiyatlandırır.',
 
     /* Kurulum/teslim süresi (bilgi bankasındaki kayıtla aynı cümle). */
-    'kurulum_suresi' => 'Stoktaki modellerde kurulum hızlıdır; '
+    'setup_time' => 'Stoktaki modellerde kurulum hızlıdır; '
         .'özel yapılandırmalarda teslim süresi satış ekibince teyit edilir.',
 
     /* Teklifin kaç gün geçerli olduğu. */
-    'gecerlilik_gun' => 30,
+    'validity_days' => 30,
 
 ];

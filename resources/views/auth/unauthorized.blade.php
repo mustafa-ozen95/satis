@@ -4,7 +4,7 @@
     <div class="empty">
       <div class="empty__title">Bu sayfaya erişim yetkiniz yok</div>
       <p class="empty__text">Bu bölüme erişmek için gereken izin hesabınıza tanımlı değil. Yöneticinizle iletişime geçin.</p>
-      <a href="{{ route('teklif.create') }}" class="btn btn--primary btn--sm">← Ana sayfaya dön</a>
+      <a href="{{ route('quote.create') }}" class="btn btn--primary btn--sm">← Ana sayfaya dön</a>
     </div>
   </div>
 </div>

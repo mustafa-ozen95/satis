@@ -22,7 +22,7 @@ use Illuminate\Support\Str;
  */
 final class Initials
 {
-    public static function al(?string $ad): string
+    public static function of(?string $ad): string
     {
         if ($ad === null || trim($ad) === '') {
             return '?';

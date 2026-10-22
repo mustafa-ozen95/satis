@@ -39,8 +39,8 @@ class QuoteMessageTest extends TestCase
         $konusma = $this->konusma($kullanici);
 
         $this->actingAs($kullanici)
-            ->post(route('teklif.reply', $konusma), ['mesaj' => 'Peki 2 kabin olursa?'])
-            ->assertRedirect(route('teklif.show', $konusma));
+            ->post(route('quote.reply', $konusma), ['mesaj' => 'Peki 2 kabin olursa?'])
+            ->assertRedirect(route('quote.show', $konusma));
 
         $this->assertDatabaseHas('messages', [
             'conversation_id' => $konusma->id,
@@ -62,7 +62,7 @@ class QuoteMessageTest extends TestCase
         $konusma = $this->konusma($kullanici);
 
         $this->actingAs($kullanici)
-            ->post(route('teklif.reply', $konusma), ['mesaj' => ''])
+            ->post(route('quote.reply', $konusma), ['mesaj' => ''])
             ->assertSessionHasErrors('mesaj');
 
         Queue::assertNothingPushed();
@@ -82,8 +82,8 @@ class QuoteMessageTest extends TestCase
         $konusma = $this->konusma($kullanici, 'bekliyor');
 
         $this->actingAs($kullanici)
-            ->post(route('teklif.reply', $konusma), ['mesaj' => 'acele et'])
-            ->assertRedirect(route('teklif.show', $konusma));
+            ->post(route('quote.reply', $konusma), ['mesaj' => 'acele et'])
+            ->assertRedirect(route('quote.show', $konusma));
 
         Queue::assertNothingPushed();
     }
@@ -104,7 +104,7 @@ class QuoteMessageTest extends TestCase
         $konusma = $this->konusma($sahip);
 
         $this->actingAs($yabanci)
-            ->post(route('teklif.reply', $konusma), ['mesaj' => 'merhaba'])
+            ->post(route('quote.reply', $konusma), ['mesaj' => 'merhaba'])
             ->assertRedirect();
 
         $this->assertDatabaseMissing('messages', ['content' => 'merhaba']);
@@ -123,7 +123,7 @@ class QuoteMessageTest extends TestCase
         $b = $this->konusma($kullanici);
 
         $this->actingAs($kullanici)
-            ->post(route('teklif.bulk-destroy'), ['secili_id' => [$a->id, $b->id]])
+            ->post(route('quote.bulk-destroy'), ['secili_id' => [$a->id, $b->id]])
             ->assertRedirect();
 
         $this->assertDatabaseMissing('conversations', ['id' => $a->id]);

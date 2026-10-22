@@ -31,7 +31,7 @@ class ProductGeneration
      * "en" + rakam (Gen9) gelmeli. Bu yüzden "8GB", "1Gbps", "250GB" gibi
      * yazımlar eşleşmez: oralarda G'den sonra harf var.
      */
-    public static function nesil(?string $ad): ?int
+    public static function generation(?string $ad): ?int
     {
         if (blank($ad)) {
             return null;
@@ -52,12 +52,12 @@ class ProductGeneration
      *
      * @return array<string, int>
      */
-    public static function enYuksekler(Collection $kalemler): array
+    public static function topOnes(Collection $kalemler): array
     {
         $enYuksek = [];
 
         foreach ($kalemler as $kalem) {
-            $nesil = self::nesil($kalem->name);
+            $nesil = self::generation($kalem->name);
 
             if ($nesil === null) {
                 continue;
@@ -81,9 +81,9 @@ class ProductGeneration
      *
      * @param  array<string, int>  $enYuksekler
      */
-    public static function satir(PriceItem $kalem, array $enYuksekler): ?string
+    public static function row(PriceItem $kalem, array $enYuksekler): ?string
     {
-        $nesil = self::nesil($kalem->name);
+        $nesil = self::generation($kalem->name);
 
         if ($nesil === null) {
             return null;

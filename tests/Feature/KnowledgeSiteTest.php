@@ -38,8 +38,8 @@ class KnowledgeSiteTest extends TestCase
         ], JSON_UNESCAPED_UNICODE));
 
         config([
-            'company.site' => 'https://www.ornek.test/',
-            'company.site_sayfalari_dosyasi' => $this->sayfaDosyasi,
+            'company.website' => 'https://www.ornek.test/',
+            'company.site_pages_file' => $this->sayfaDosyasi,
         ]);
     }
 
@@ -63,7 +63,7 @@ class KnowledgeSiteTest extends TestCase
      */
     public function test_sayfa_listesi_yoksa_tur_atlanir_kayitlar_durur(): void
     {
-        config(['company.site_sayfalari_dosyasi' => $this->sayfaDosyasi.'-yok']);
+        config(['company.site_pages_file' => $this->sayfaDosyasi.'-yok']);
 
         KnowledgeRecord::create([
             'baslik' => 'Veri merkezi — Eski Bölüm',
@@ -74,7 +74,7 @@ class KnowledgeSiteTest extends TestCase
 
         Http::fake();
 
-        $this->artisan('bilgi:siteden')->assertSuccessful();
+        $this->artisan('knowledge:site')->assertSuccessful();
 
         Http::assertNothingSent();
         $this->assertSame(1, KnowledgeRecord::query()->count());
@@ -85,7 +85,7 @@ class KnowledgeSiteTest extends TestCase
     {
         file_put_contents($this->sayfaDosyasi, '{bozuk');
 
-        $this->artisan('bilgi:siteden')->assertFailed();
+        $this->artisan('knowledge:site')->assertFailed();
 
         $this->assertDatabaseHas('activity_logs', ['tur' => 'bilgi_site_tarama_iptal']);
     }
@@ -93,10 +93,10 @@ class KnowledgeSiteTest extends TestCase
     /** Kaynak etiketi sitenin alan adıdır; baştaki "www." atılır. */
     public function test_kaynak_etiketi_sitenin_alan_adidir(): void
     {
-        $this->assertSame('ornek.test', KnowledgeSiteCommand::kaynak());
+        $this->assertSame('ornek.test', KnowledgeSiteCommand::source());
 
-        config(['company.site' => '']);
-        $this->assertSame('kurumsal-site', KnowledgeSiteCommand::kaynak());
+        config(['company.website' => '']);
+        $this->assertSame('kurumsal-site', KnowledgeSiteCommand::source());
     }
 
     /** Her başlık kendi kaydı olur; kısa bölümler atlanır. */
@@ -106,7 +106,7 @@ class KnowledgeSiteTest extends TestCase
 
         $this->sayfa("<h2>Enerji Altyapısı</h2><p>{$uzun}</p><h2>Kısa</h2><p>az</p>");
 
-        $this->artisan('bilgi:siteden')->assertSuccessful();
+        $this->artisan('knowledge:site')->assertSuccessful();
 
         $this->assertDatabaseHas('bilgi_kayitlari', ['kaynak' => 'ornek.test']);
         $this->assertTrue(KnowledgeRecord::query()->where('baslik', 'like', '%Enerji Altyapısı')->exists());
@@ -130,7 +130,7 @@ class KnowledgeSiteTest extends TestCase
             ."<details><summary>IP adresi dahil mi?</summary><p>{$yanit}</p></details>"
         );
 
-        $this->artisan('bilgi:siteden')->assertSuccessful();
+        $this->artisan('knowledge:site')->assertSuccessful();
 
         $this->assertTrue(KnowledgeRecord::query()->where('baslik', 'like', '%Teknik destek var mı?')->exists());
         $this->assertTrue(KnowledgeRecord::query()->where('baslik', 'like', '%IP adresi dahil mi?')->exists());
@@ -154,7 +154,7 @@ class KnowledgeSiteTest extends TestCase
 
         $this->sayfa("<h2>Enerji Altyapısı</h2><p>{$uzun}</p>");
 
-        $this->artisan('bilgi:siteden')->assertSuccessful();
+        $this->artisan('knowledge:site')->assertSuccessful();
 
         $this->assertSame(
             'Satış ekibinin kendi notu.',
@@ -182,7 +182,7 @@ class KnowledgeSiteTest extends TestCase
 
         $this->sayfa("<h2>Enerji Altyapısı</h2><p>{$uzun}</p>");
 
-        $this->artisan('bilgi:siteden')->assertSuccessful();
+        $this->artisan('knowledge:site')->assertSuccessful();
 
         $this->assertFalse(
             KnowledgeRecord::query()->where('baslik', 'Veri merkezi — Kaldırılmış Bölüm')->exists(),
@@ -206,7 +206,7 @@ class KnowledgeSiteTest extends TestCase
 
         Http::fake(['*ornek.test*' => Http::response('', 503)]);
 
-        $this->artisan('bilgi:siteden')->assertFailed();
+        $this->artisan('knowledge:site')->assertFailed();
 
         /* Ne silindi ne eklendi: kayıt olduğu gibi duruyor. */
         $this->assertTrue(
@@ -230,7 +230,7 @@ class KnowledgeSiteTest extends TestCase
             '*ornek.test*' => Http::response("<html><body><h2>Enerji Altyapısı</h2><p>{$uzun}</p></body></html>"),
         ]);
 
-        $this->artisan('bilgi:siteden')->assertFailed();
+        $this->artisan('knowledge:site')->assertFailed();
 
         $this->assertSame(0, KnowledgeRecord::query()->count(), 'İptal edilen turda hiçbir kayıt yazılmamalıydı.');
     }
@@ -240,7 +240,7 @@ class KnowledgeSiteTest extends TestCase
     {
         Http::fake(['*ornek.test*' => Http::response('', 503)]);
 
-        $this->artisan('bilgi:siteden')->assertFailed();
+        $this->artisan('knowledge:site')->assertFailed();
 
         $this->assertDatabaseHas('activity_logs', ['tur' => 'bilgi_site_tarama_iptal']);
     }

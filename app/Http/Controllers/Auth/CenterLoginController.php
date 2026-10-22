@@ -35,11 +35,11 @@ class CenterLoginController extends Controller
 
     private const DOGRULAYICI = 'kimlik_dogrulayici';
 
-    public function baslat(Request $request, CenterClient $merkez): RedirectResponse
+    public function start(Request $request, CenterClient $merkez): RedirectResponse
     {
-        abort_unless($merkez->acikMi(), 404);
+        abort_unless($merkez->isEnabled(), 404);
 
-        $dogrulayici = $merkez->dogrulayici();
+        $dogrulayici = $merkez->verifier();
         $durum = Str::random(40);
 
         /*
@@ -49,17 +49,17 @@ class CenterLoginController extends Controller
         $request->session()->put(self::DOGRULAYICI, $dogrulayici);
         $request->session()->put(self::DURUM, $durum);
 
-        return redirect()->away($merkez->girisAdresi($durum, $merkez->meydanOkuma($dogrulayici)));
+        return redirect()->away($merkez->loginUrl($durum, $merkez->challenge($dogrulayici)));
     }
 
-    public function geri(
+    public function callback(
         Request $request,
         CenterClient $merkez,
         AccountMatcher $eslestirici,
         AccountOpener $hesapAcici,
         ActivityRecorder $kayit,
     ): RedirectResponse {
-        abort_unless($merkez->acikMi(), 404);
+        abort_unless($merkez->isEnabled(), 404);
 
         $beklenen = $request->session()->pull(self::DURUM);
         $dogrulayici = $request->session()->pull(self::DOGRULAYICI);
@@ -72,16 +72,16 @@ class CenterLoginController extends Controller
          * bağlayabilirdi.
          */
         if (blank($beklenen) || ! hash_equals((string) $beklenen, (string) $request->query('state'))) {
-            return $this->hata('Giriş akışı doğrulanamadı; lütfen yeniden deneyin.');
+            return $this->fail('Giriş akışı doğrulanamadı; lütfen yeniden deneyin.');
         }
 
         if (blank($request->query('code')) || blank($dogrulayici)) {
-            return $this->hata('Merkezden kod gelmedi.');
+            return $this->fail('Merkezden kod gelmedi.');
         }
 
         try {
-            $jeton = $merkez->jeton((string) $request->query('code'), (string) $dogrulayici);
-            $kimlik = $merkez->kullanici((string) ($jeton['access_token'] ?? ''));
+            $jeton = $merkez->token((string) $request->query('code'), (string) $dogrulayici);
+            $kimlik = $merkez->user((string) ($jeton['access_token'] ?? ''));
         } catch (CenterUnauthorizedException $e) {
             /*
              * MERKEZ KAPIYI KAPATTI — hata değil, KARAR.
@@ -90,13 +90,13 @@ class CenterLoginController extends Controller
              * (İstemciler ekranındaki rol listesi). Red kayda geçer: kimin
              * nereye girmeye çalıştığı sorulacak.
              */
-            $kayit->kaydet('merkez-giris-reddedildi', $e->getMessage());
+            $kayit->log('merkez-giris-reddedildi', $e->getMessage());
 
-            return $this->hata($e->getMessage());
+            return $this->fail($e->getMessage());
         } catch (Throwable $e) {
             report($e);
 
-            return $this->hata('Merkezle bağlantı kurulamadı; lütfen parolanızla girin.');
+            return $this->fail('Merkezle bağlantı kurulamadı; lütfen parolanızla girin.');
         }
 
         /*
@@ -105,7 +105,7 @@ class CenterLoginController extends Controller
          * gerek yok — aynı karar iki yerde durursa biri değişince öbürü
          * sessizce eski kalır.
          */
-        $kullanici = $eslestirici->bul($kimlik);
+        $kullanici = $eslestirici->find($kimlik);
 
         /*
          * EŞLEŞME YOKSA HESAP AÇILIR — koşulları sağlıyorsa.
@@ -118,27 +118,27 @@ class CenterLoginController extends Controller
          * Koşullar AccountOpener'de: ayar açık, adres doğrulanmış, rol izinli.
          * Sağlanmıyorsa kapı yine kapalıdır.
          */
-        if ($kullanici === null && $hesapAcici->acilabilirMi($kimlik)) {
-            $kullanici = $hesapAcici->ac($kimlik);
+        if ($kullanici === null && $hesapAcici->canOpen($kimlik)) {
+            $kullanici = $hesapAcici->open($kimlik);
 
-            $kayit->kaydet(
+            $kayit->log(
                 'merkez-hesap-acildi',
                 "Merkezden gelen kimlik için hesap açıldı: {$kullanici->email}"
-                    ." · {$kimlik['email']} · merkezdeki rol ".($kimlik['rol'] ?? 'rolsüz'),
+                    ." · {$kimlik['email']} · merkezdeki rol ".($kimlik['role'] ?? 'rolsüz'),
                 $kullanici,
                 $kullanici,
             );
         }
 
         if ($kullanici === null) {
-            return $this->hata('Bu kimlikle eşleşen bir hesap yok. Hesap açılması için yöneticinize başvurun.');
+            return $this->fail('Bu kimlikle eşleşen bir hesap yok. Hesap açılması için yöneticinize başvurun.');
         }
 
         if (! $kullanici->aktif) {
-            return $this->hata('Hesabınız etkin değil. Yöneticinize başvurun.');
+            return $this->fail('Hesabınız etkin değil. Yöneticinize başvurun.');
         }
 
-        $ilkBag = $eslestirici->bagla($kullanici, $kimlik);
+        $ilkBag = $eslestirici->link($kullanici, $kimlik);
 
         /*
          * HATIRLAMA ÇEREZİ YOK: oturum süresi gerçekten süre olsun
@@ -147,17 +147,17 @@ class CenterLoginController extends Controller
         Auth::login($kullanici, remember: false);
         $request->session()->regenerate();
 
-        $kayit->kaydet(
+        $kayit->log(
             $ilkBag->wasRecentlyCreated ? 'merkez-giris-baglandi' : 'merkez-giris',
-            "Merkezle giriş: {$kimlik['email']} (rol: ".($kimlik['rol'] ?? 'rolsüz').')',
+            "Merkezle giriş: {$kimlik['email']} (rol: ".($kimlik['role'] ?? 'rolsüz').')',
             $kullanici,
             $kullanici,
         );
 
-        return redirect()->intended(route('teklif.create'));
+        return redirect()->intended(route('quote.create'));
     }
 
-    private function hata(string $mesaj): RedirectResponse
+    private function fail(string $mesaj): RedirectResponse
     {
         return redirect()->route('login')->withErrors(['email' => $mesaj]);
     }

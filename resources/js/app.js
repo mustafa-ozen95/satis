@@ -1,17 +1,17 @@
 import * as bulk from './components/bulk.js';
-import * as yerindeDuzenle from './components/inline-edit.js';
+import * as inlineEdit from './components/inline-edit.js';
 import * as columns from './components/columns.js';
 import * as confirmDialog from './components/confirm.js';
 import * as copy from './components/copy.js';
 import * as dialog from './components/dialog.js';
-import * as enterGonder from './components/enter-send.js';
-import * as kategori from './components/category.js';
-import * as kaydirarakGezin from './components/scrolling-navigate.js';
+import * as enterSend from './components/enter-send.js';
+import * as category from './components/category.js';
+import * as scrollNavigate from './components/scrolling-navigate.js';
 import * as keyboard from './components/keyboard.js';
-import * as kullaniciMenu from './components/user-menu.js';
+import * as userMenu from './components/user-menu.js';
 import * as navigation from './components/navigation.js';
-import * as teklifDaha from './components/quote-more.js';
-import * as teklifPolling from './components/quote-polling.js';
+import * as quoteMore from './components/quote-more.js';
+import * as quotePolling from './components/quote-polling.js';
 import * as theme from './components/theme.js';
 import * as toast from './components/toast.js';
 
@@ -37,11 +37,11 @@ import * as toast from './components/toast.js';
  */
 theme.init();
 
-function herCizimde() {
+function everyRender() {
     toast.init();
     keyboard.prepare();
     bulk.prepare();
-    kategori.prepare();
+    category.prepare();
 
     /* Dar ekranda şerit doğru bölmeye iner; geniş ekranda hiçbir şey yapmaz. */
     columns.init();
@@ -50,31 +50,31 @@ function herCizimde() {
      * Her çizimde: teklif "üretiliyor" durumundayken sayfa yenilenmeden
      * hazır hâle geçiyor. Bir kez kurulsaydı ikinci teklif izlenmezdi.
      */
-    teklifPolling.init();
+    quotePolling.init();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     dialog.init();
     confirmDialog.init();
     bulk.init();
-    yerindeDuzenle.init();
+    inlineEdit.init();
     copy.init();
-    kategori.init();
+    category.init();
 
     /* Telefonda parmakla bölüm değiştirme; dinleyici gövdede, bir kez kurulur. */
-    kaydirarakGezin.init();
+    scrollNavigate.init();
 
     /* Enter mesajı gönderir; dinleyici gövdede, bir kez kurulur. */
-    enterGonder.init();
+    enterSend.init();
 
     /* "Devamını gör": sonraki on beş teklif listeye eklenir. */
-    teklifDaha.init();
+    quoteMore.init();
 
     keyboard.init();
-    kullaniciMenu.init();
+    userMenu.init();
     navigation.init();
 
-    herCizimde();
+    everyRender();
 });
 
-document.addEventListener('sys:sayfa', herCizimde);
+document.addEventListener('sys:page', everyRender);

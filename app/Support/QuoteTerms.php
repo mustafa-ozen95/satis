@@ -27,29 +27,29 @@ class QuoteTerms
     /** Mailin sonundaki bloğun başlığı; iki kez eklenmemesi de buradan anlaşılır. */
     public const BASLIK = 'SÜRELER VE GEÇERLİLİK';
 
-    public static function kdvOrani(): int
+    public static function vatRate(): int
     {
-        return (int) config('quote.kdv_orani', 20);
+        return (int) config('quote.vat_rate', 20);
     }
 
     /** İsteme giren blok: modelin uyacağı koşullar. */
-    public static function istemMetni(): string
+    public static function promptText(): string
     {
         return "GEÇERLİ KOŞULLAR (sabittir, uydurulmaz):\n"
-            .'- KDV oranı: %'.self::kdvOrani()."\n"
-            .'- Hizmet süresi / faturalama: '.self::hizmetSuresi()."\n"
-            .'- Kurulum / teslim süresi: '.self::kurulumSuresi()."\n"
-            .'- Teklif geçerlilik süresi: '.self::gecerlilikGun()." gün\n"
+            .'- KDV oranı: %'.self::vatRate()."\n"
+            .'- Hizmet süresi / faturalama: '.self::serviceTime()."\n"
+            .'- Kurulum / teslim süresi: '.self::setupTime()."\n"
+            .'- Teklif geçerlilik süresi: '.self::validityDays()." gün\n"
             .'(Bu satırlar teklifin sonuna SİSTEM tarafından eklenir; mailde tekrar yazma.)';
     }
 
     /** Müşteri mailinin sonuna eklenen blok. */
-    public static function mailMetni(): string
+    public static function mailText(): string
     {
         return self::BASLIK."\n"
-            .'- Hizmet süresi: '.self::hizmetSuresi()."\n"
-            .'- Kurulum / teslim süresi: '.self::kurulumSuresi()."\n"
-            .'- Teklif geçerlilik süresi: '.self::gecerlilikGun().' gün';
+            .'- Hizmet süresi: '.self::serviceTime()."\n"
+            .'- Kurulum / teslim süresi: '.self::setupTime()."\n"
+            .'- Teklif geçerlilik süresi: '.self::validityDays().' gün';
     }
 
     /**
@@ -63,13 +63,13 @@ class QuoteTerms
      *  - Blok HENÜZ YOKSA. Model kuralı dinleyip yine de yazdıysa ikinci bir
      *    kopya çıkmasın.
      */
-    public static function mailEkle(string $mail): string
+    public static function appendMail(string $mail): string
     {
-        if (! self::fiyatGeciyor($mail) || str_contains($mail, self::BASLIK)) {
+        if (! self::priceMentioned($mail) || str_contains($mail, self::BASLIK)) {
             return $mail;
         }
 
-        return rtrim($mail)."\n\n".self::mailMetni();
+        return rtrim($mail)."\n\n".self::mailText();
     }
 
     /**
@@ -79,23 +79,23 @@ class QuoteTerms
      * rakam aramak telefon numarasını, yalnızca "TL" aramak bir cümleyi
      * fiyat sayardı.
      */
-    private static function fiyatGeciyor(string $mail): bool
+    private static function priceMentioned(string $mail): bool
     {
         return preg_match('/\d[\d.,]*\s*(TL|TRY|USD|EUR|₺|\$|€)(?![\p{L}])/iu', $mail) === 1;
     }
 
-    private static function hizmetSuresi(): string
+    private static function serviceTime(): string
     {
-        return trim((string) config('quote.hizmet_suresi'));
+        return trim((string) config('quote.service_time'));
     }
 
-    private static function kurulumSuresi(): string
+    private static function setupTime(): string
     {
-        return trim((string) config('quote.kurulum_suresi'));
+        return trim((string) config('quote.setup_time'));
     }
 
-    private static function gecerlilikGun(): int
+    private static function validityDays(): int
     {
-        return (int) config('quote.gecerlilik_gun', 30);
+        return (int) config('quote.validity_days', 30);
     }
 }

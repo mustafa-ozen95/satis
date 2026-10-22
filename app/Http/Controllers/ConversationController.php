@@ -34,15 +34,15 @@ class ConversationController extends Controller
     {
         $this->authorize('perm_teklif', User::class);
 
-        $teklifler = $this->tekliflerim($request);
+        $teklifler = $this->myQuotes($request);
 
         return view('quote.index', [
             'tekliflerim' => $teklifler,
             'devamiVar' => $teklifler->isNotEmpty()
-                && $this->teklifSorgusu($request)->where('id', '<', $teklifler->last()->id)->exists(),
+                && $this->quoteQuery($request)->where('id', '<', $teklifler->last()->id)->exists(),
             'arama' => $request->string('q')->toString(),
             'secili' => null,
-            'istatistik' => $this->istatistik($knowledgeBase),
+            'istatistik' => $this->statistics($knowledgeBase),
         ]);
     }
 
@@ -59,11 +59,11 @@ class ConversationController extends Controller
             'content' => $validated['talep'],
         ]);
 
-        app(ActivityRecorder::class)->kaydet('teklif_olustur', 'Teklif üretimi başlatıldı', $conversation);
+        app(ActivityRecorder::class)->log('teklif_olustur', 'Teklif üretimi başlatıldı', $conversation);
 
         GenerateQuoteJob::dispatch($conversation, $validated['talep']);
 
-        return redirect()->route('teklif.show', $conversation);
+        return redirect()->route('quote.show', $conversation);
     }
 
     public function show(Request $request, Conversation $conversation, KnowledgeBaseService $knowledgeBase): View
@@ -76,17 +76,17 @@ class ConversationController extends Controller
          * İşaret listeden ÖNCE konur: aynı istekte çizilen liste, az önce
          * açılan konuşmayı okunmamış göstermesin.
          */
-        $conversation->okunduIsaretle();
+        $conversation->markRead();
 
-        $teklifler = $this->tekliflerim($request);
+        $teklifler = $this->myQuotes($request);
 
         return view('quote.index', [
             'tekliflerim' => $teklifler,
             'devamiVar' => $teklifler->isNotEmpty()
-                && $this->teklifSorgusu($request)->where('id', '<', $teklifler->last()->id)->exists(),
+                && $this->quoteQuery($request)->where('id', '<', $teklifler->last()->id)->exists(),
             'arama' => $request->string('q')->toString(),
             'secili' => $conversation->load('messages'),
-            'istatistik' => $this->istatistik($knowledgeBase),
+            'istatistik' => $this->statistics($knowledgeBase),
         ]);
     }
 
@@ -99,7 +99,7 @@ class ConversationController extends Controller
         $this->authorize('reply', $conversation); // ConversationPolicy@reply
 
         if ($conversation->durum === 'bekliyor') {
-            return redirect()->route('teklif.show', $conversation)
+            return redirect()->route('quote.show', $conversation)
                 ->with('error', 'Önceki mesaj hâlâ hazırlanıyor, lütfen bekleyin.');
         }
 
@@ -114,19 +114,19 @@ class ConversationController extends Controller
 
         GenerateQuoteJob::dispatch($conversation, $validated['mesaj']);
 
-        return redirect()->route('teklif.show', $conversation);
+        return redirect()->route('quote.show', $conversation);
     }
 
     /**
      * Teklif işinin durumu. Bekleme sayfasındaki JS bunu 1.5 saniyede bir polling ile sorgular.
      */
-    public function durum(Conversation $conversation): JsonResponse
+    public function status(Conversation $conversation): JsonResponse
     {
         $this->authorize('view', $conversation);
 
         return response()->json([
-            'durum' => $conversation->durum,
-            'hata_mesaji' => $conversation->hata_mesaji,
+            'status' => $conversation->durum,
+            'error_message' => $conversation->hata_mesaji,
         ]);
     }
 
@@ -137,7 +137,7 @@ class ConversationController extends Controller
         $conversation->messages()->delete();
         $conversation->delete();
 
-        return redirect()->route('teklif.create')->with('status', 'Teklif silindi.');
+        return redirect()->route('quote.create')->with('status', 'Teklif silindi.');
     }
 
     /**
@@ -158,7 +158,7 @@ class ConversationController extends Controller
             $konusma->delete();
         }
 
-        return redirect()->route('teklif.create')
+        return redirect()->route('quote.create')
             ->with('status', $konusmalar->count().' teklif silindi.');
     }
 
@@ -185,9 +185,9 @@ class ConversationController extends Controller
      * tek seferde çizmek telefonda sayfayı kilitler. Gerisi "Devamını
      * gör" ile, on beşer on beşer gelir.
      */
-    protected function tekliflerim(Request $request, ?int $oncesi = null): Collection
+    protected function myQuotes(Request $request, ?int $oncesi = null): Collection
     {
-        return $this->teklifSorgusu($request)
+        return $this->quoteQuery($request)
             ->when($oncesi !== null, fn ($q) => $q->where('id', '<', $oncesi))
             ->orderByDesc('id')
             ->limit(self::SAYFA_BOYU)
@@ -195,7 +195,7 @@ class ConversationController extends Controller
     }
 
     /** @return Builder<Conversation> */
-    protected function teklifSorgusu(Request $request)
+    protected function quoteQuery(Request $request)
     {
         $kullanici = auth()->user();
 
@@ -217,22 +217,22 @@ class ConversationController extends Controller
      * bir gün biri unutulur ve uç, listenin arkasından herkesin teklifini
      * verirdi.
      */
-    public function daha(Request $request): View
+    public function more(Request $request): View
     {
         $this->authorize('perm_teklif', User::class);
 
         $oncesi = $request->integer('oncesi') ?: null;
-        $teklifler = $this->tekliflerim($request, $oncesi);
+        $teklifler = $this->myQuotes($request, $oncesi);
 
         return view('quote.partials.rows', [
             'tekliflerim' => $teklifler,
             'secili' => null,
             'devamiVar' => $teklifler->isNotEmpty()
-                && $this->teklifSorgusu($request)->where('id', '<', $teklifler->last()->id)->exists(),
+                && $this->quoteQuery($request)->where('id', '<', $teklifler->last()->id)->exists(),
         ]);
     }
 
-    protected function istatistik(KnowledgeBaseService $knowledgeBase): array
+    protected function statistics(KnowledgeBaseService $knowledgeBase): array
     {
         try {
             $bilgiSayisi = count($knowledgeBase->listEntries());
@@ -241,7 +241,7 @@ class ConversationController extends Controller
         }
 
         return [
-            'fiyat_sayisi' => PriceItem::aktif()->count(),
+            'fiyat_sayisi' => PriceItem::active()->count(),
             'bilgi_sayisi' => $bilgiSayisi,
             'kullanici_sayisi' => User::count(),
         ];

@@ -7,7 +7,7 @@
         <p class="page-head__subtitle">Teklif AI'ın referans aldığı kurallar ve dokümanlar burada tutulur.</p>
       </div>
       <div class="page-head__actions">
-        <a href="#" class="btn btn--primary btn--sm" data-modal-open="bilgi-ekle"><x-icon name="plus" />Bilgi ekle</a>
+        <a href="#" class="btn btn--primary btn--sm" data-modal-open="knowledge-add"><x-icon name="plus" />Bilgi ekle</a>
       </div>
     </header>
 
@@ -21,11 +21,11 @@
         </div>
         <div class="panel__actions">
           <span class="badge">{{ $k['category'] }}</span>
-          <span class="kod">{{ $k['source'] }}</span>
+          <span class="code">{{ $k['source'] }}</span>
           <a href="#" class="btn btn--sm" data-modal-open="bilgi-duzenle-{{ $k['id'] }}"><x-icon name="edit" />Düzenle</a>
           <form
             method="post"
-            action="{{ route('bilgi-bankasi.destroy', $k['id']) }}"
+            action="{{ route('knowledge-base.destroy', $k['id']) }}"
             data-confirm="&quot;{{ $k['title'] }}&quot; kalıcı olarak silinecek."
             data-confirm-title="Bilgi kaydını sil"
             data-confirm-variant="danger"
@@ -46,7 +46,7 @@
       id="bilgi-duzenle-{{ $k['id'] }}"
       data-modal
       @unless ($duzenleAcik[$k['id']]) hidden @endunless
-      @if ($duzenleAcik[$k['id']]) data-modal-acik data-modal-kapanis="{{ route('bilgi-bankasi.index') }}" @endif
+      @if ($duzenleAcik[$k['id']]) data-modal-visible data-modal-close-url="{{ route('knowledge-base.index') }}" @endif
       role="dialog" aria-modal="true" aria-labelledby="bilgi-duzenle-{{ $k['id'] }}-baslik"
     >
       <div class="modal__box modal__box--wide">
@@ -55,7 +55,7 @@
           <button type="button" class="modal__close" data-modal-close aria-label="Kapat">×</button>
         </header>
 
-        <form method="post" action="{{ route('bilgi-bankasi.update', $k['id']) }}">
+        <form method="post" action="{{ route('knowledge-base.update', $k['id']) }}">
           @csrf
           <input type="hidden" name="_form" value="duzenle-{{ $k['id'] }}">
           <div class="modal__body">
@@ -73,7 +73,7 @@
               <label class="field__label" for="baslik-{{ $k['id'] }}">Başlık</label>
               <input type="text" class="input" id="baslik-{{ $k['id'] }}" name="baslik" value="{{ $duzenleAcik[$k['id']] ? old('baslik') : $k['title'] }}" aria-invalid="{{ $duzenleAcik[$k['id']] && $errors->has('baslik') ? 'true' : 'false' }}" required>
             </div>
-            <x-form.category :id="'kategori-'.$k['id']"
+            <x-form.category :id="'category-'.$k['id']"
                              :secenekler="$kategoriler"
                              :deger="$duzenleAcik[$k['id']] ? old('kategori') : $k['category']" />
             <div class="field">
@@ -97,19 +97,19 @@
     {{-- "ekle" modalı da bilerek `.page__inner`in İÇİNDE - bkz. modal-body-inner.css. --}}
 <div
   class="modal"
-  id="bilgi-ekle"
+  id="knowledge-add"
   data-modal
   @unless ($buFormEkle) hidden @endunless
-  @if ($buFormEkle) data-modal-acik data-modal-kapanis="{{ route('bilgi-bankasi.index') }}" @endif
-  role="dialog" aria-modal="true" aria-labelledby="bilgi-ekle-baslik"
+  @if ($buFormEkle) data-modal-visible data-modal-close-url="{{ route('knowledge-base.index') }}" @endif
+  role="dialog" aria-modal="true" aria-labelledby="knowledge-add-title"
 >
   <div class="modal__box modal__box--wide">
     <header class="modal__header">
-      <h2 class="modal__title" id="bilgi-ekle-baslik">Bilgi ekle</h2>
+      <h2 class="modal__title" id="knowledge-add-title">Bilgi ekle</h2>
       <button type="button" class="modal__close" data-modal-close aria-label="Kapat">×</button>
     </header>
 
-    <form method="post" action="{{ route('bilgi-bankasi.store') }}">
+    <form method="post" action="{{ route('knowledge-base.store') }}">
       @csrf
       <input type="hidden" name="_form" value="ekle">
       <div class="modal__body">
@@ -124,13 +124,13 @@
         @endif
 
         <div class="field">
-          <label class="field__label" for="yeni-baslik">Başlık</label>
-          <input type="text" class="input" id="yeni-baslik" name="baslik" value="{{ old('baslik') }}" aria-invalid="{{ $errors->has('baslik') ? 'true' : 'false' }}" required>
+          <label class="field__label" for="new-title">Başlık</label>
+          <input type="text" class="input" id="new-title" name="baslik" value="{{ old('baslik') }}" aria-invalid="{{ $errors->has('baslik') ? 'true' : 'false' }}" required>
         </div>
-        <x-form.category id="yeni-kategori" :secenekler="$kategoriler" :deger="old('kategori')" />
+        <x-form.category id="new-category" :secenekler="$kategoriler" :deger="old('kategori')" />
         <div class="field">
-          <label class="field__label" for="yeni-bilgi">Bilgi</label>
-          <textarea class="textarea" id="yeni-bilgi" name="bilgi" aria-invalid="{{ $errors->has('bilgi') ? 'true' : 'false' }}" required>{{ old('bilgi') }}</textarea>
+          <label class="field__label" for="new-info">Bilgi</label>
+          <textarea class="textarea" id="new-info" name="bilgi" aria-invalid="{{ $errors->has('bilgi') ? 'true' : 'false' }}" required>{{ old('bilgi') }}</textarea>
         </div>
       </div>
       <footer class="modal__footer">

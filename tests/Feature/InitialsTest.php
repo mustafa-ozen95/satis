@@ -22,28 +22,28 @@ class InitialsTest extends TestCase
 
     public function test_iki_kelimenin_bas_harfi_alinir(): void
     {
-        $this->assertSame('SA', Initials::al('Sınama Ağ'));
-        $this->assertSame('AY', Initials::al('Ayşe Yılmaz'));
+        $this->assertSame('SA', Initials::of('Sınama Ağ'));
+        $this->assertSame('AY', Initials::of('Ayşe Yılmaz'));
     }
 
     /** Tek kelimeyse tek harf; iki harfe TAMAMLANMAZ. */
     public function test_tek_kelime_tek_harf(): void
     {
-        $this->assertSame('A', Initials::al('Ali'));
+        $this->assertSame('A', Initials::of('Ali'));
     }
 
     /** Üçüncü kelime alınmaz: simge iki harften uzun olmamalı. */
     public function test_ucuncu_kelime_alinmaz(): void
     {
-        $this->assertSame('AD', Initials::al('Ali Demir Kaya'));
+        $this->assertSame('AD', Initials::of('Ali Demir Kaya'));
     }
 
     /** Fazla boşluk ve boş ad ekranı bozmaz. */
     public function test_bosluklar_ve_bos_ad(): void
     {
-        $this->assertSame('AD', Initials::al('  Ali   Demir  '));
-        $this->assertSame('?', Initials::al(''));
-        $this->assertSame('?', Initials::al(null));
+        $this->assertSame('AD', Initials::of('  Ali   Demir  '));
+        $this->assertSame('?', Initials::of(''));
+        $this->assertSame('?', Initials::of(null));
     }
 
     /** Ekranda gerçekten bu çiziliyor. */
@@ -52,7 +52,7 @@ class InitialsTest extends TestCase
         $kullanici = User::factory()->admin()->create(['name' => 'Sınama Ağ']);
 
         $this->actingAs($kullanici)
-            ->get(route('profil.show'))
+            ->get(route('profile.show'))
             ->assertOk()
             ->assertSee('>SA<', false);
     }

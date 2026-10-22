@@ -31,15 +31,15 @@ import { $, $$ } from '../lib/dom.js';
  * Üst menü dar ekranda taşıyor ve en soldan başlıyordu: kullanıcı hangi
  * bölümde olduğunu görmek için kaydırmak zorunda kalıyordu.
  */
-function seciliyeOdaklan(serit) {
-    const secili = $('[aria-current="page"]', serit);
+function focusSelected(strip) {
+    const selected = $('[aria-current="page"]', strip);
 
-    if (!secili || serit.scrollWidth <= serit.clientWidth) {
+    if (!selected || strip.scrollWidth <= strip.clientWidth) {
         return;
     }
 
     /* Seçili öğe ortalanır; iki yanındaki komşular da görünür kalır. */
-    serit.scrollLeft = secili.offsetLeft - (serit.clientWidth - secili.offsetWidth) / 2;
+    strip.scrollLeft = selected.offsetLeft - (strip.clientWidth - selected.offsetWidth) / 2;
 }
 
 /**
@@ -48,9 +48,9 @@ function seciliyeOdaklan(serit) {
  * Görünmeyen bölmeler atlanır: detay paneli yalnızca bir kayıt seçiliyken
  * çizilir.
  */
-function gorunurBolmeler(serit) {
-    return $$(':scope > .column, :scope > .detail', serit)
-        .filter((bolme) => getComputedStyle(bolme).display !== 'none');
+function visiblePanes(strip) {
+    return $$(':scope > .column, :scope > .detail', strip)
+        .filter((pane) => getComputedStyle(pane).display !== 'none');
 }
 
 /**
@@ -69,10 +69,10 @@ function gorunurBolmeler(serit) {
  *   - ?grup=  → liste bölmesi
  *   - hiçbiri → en baştaki bölme (gruplar)
  */
-function hedefBolme(serit) {
-    const bolmeler = gorunurBolmeler(serit);
+function targetPane(strip) {
+    const panes = visiblePanes(strip);
 
-    if (bolmeler.length === 0) {
+    if (panes.length === 0) {
         return null;
     }
 
@@ -85,43 +85,43 @@ function hedefBolme(serit) {
      * açılışta görünmesi gereken bölmeyi sunucu bilir; bilmediğimiz bir şeyi
      * adresten tahmin etmektense ekran söylesin.
      *
-     *     <div class="columns" data-acilis="son">  → en sağdaki bölme
-     *     <div class="columns" data-acilis="ilk">  → en soldaki bölme
+     *     <div class="columns" data-open-at="son">  → en sağdaki bölme
+     *     <div class="columns" data-open-at="ilk">  → en soldaki bölme
      *
      * Öznitelik yoksa adres kuralı geçerlidir.
      */
-    const acilis = serit.dataset.acilis;
+    const openMode = strip.dataset.openAt;
 
-    if (acilis === 'son') {
-        return bolmeler[bolmeler.length - 1];
+    if (openMode === 'son') {
+        return panes[panes.length - 1];
     }
 
-    if (acilis === 'ilk') {
-        return bolmeler[0];
+    if (openMode === 'ilk') {
+        return panes[0];
     }
 
-    const adres = new URLSearchParams(window.location.search);
+    const address = new URLSearchParams(window.location.search);
 
-    if (adres.has('kayit')) {
-        return bolmeler[bolmeler.length - 1];
+    if (address.has('kayit')) {
+        return panes[panes.length - 1];
     }
 
-    if (adres.has('grup')) {
-        return bolmeler[Math.min(1, bolmeler.length - 1)];
+    if (address.has('grup')) {
+        return panes[Math.min(1, panes.length - 1)];
     }
 
-    return bolmeler[0];
+    return panes[0];
 }
 
-function bolmeyeIn(serit) {
-    const hedef = hedefBolme(serit);
+function descendToPane(strip) {
+    const destination = targetPane(strip);
 
     /* Taşma yoksa (masaüstü) kaydırılacak bir şey de yok. */
-    if (!hedef || serit.scrollWidth <= serit.clientWidth) {
+    if (!destination || strip.scrollWidth <= strip.clientWidth) {
         return;
     }
 
-    serit.scrollTo({ left: hedef.offsetLeft - serit.offsetLeft, behavior: 'auto' });
+    strip.scrollTo({ left: destination.offsetLeft - strip.offsetLeft, behavior: 'auto' });
 }
 
 export function init() {
@@ -129,7 +129,7 @@ export function init() {
      * Yatay kayan HER şerit aynı kurala tabidir. Sekme şeridi de listede:
      * "Hatalar" sekmesindeyken seçilinin nerede olduğu görünmüyordu.
      */
-    $$('.topbar__nav, .tabs').forEach(seciliyeOdaklan);
+    $$('.topbar__nav, .tabs').forEach(focusSelected);
 
-    $$('.columns').forEach(bolmeyeIn);
+    $$('.columns').forEach(descendToPane);
 }

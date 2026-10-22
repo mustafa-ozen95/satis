@@ -38,7 +38,7 @@ class AccountOpener
      *
      * KARAR MERKEZİNDİR: hangi uygulamada hesabın kendiliğinden açılacağını
      * merkez söyler (İstemciler ekranında uygulama başına bir kutucuk) ve
-     * kimlik yanıtında `hesap_acilabilir` olarak gönderir. Panel kendi
+     * kimlik yanıtında `can_create_account` olarak gönderir. Panel kendi
      * listesini tutmaz — aynı karar iki yerde durursa biri değişince öbürü
      * sessizce eski kalır.
      *
@@ -46,18 +46,18 @@ class AccountOpener
      * doğrulanmamış bir adresle hesap açmak, meslektaşının adresiyle kayıt
      * olan birine burada hesap vermek olurdu.
      *
-     * @param  array{email_verified?: bool, hesap_acilabilir?: bool}  $kimlik
+     * @param  array{email_verified?: bool, can_create_account?: bool}  $kimlik
      */
-    public function acilabilirMi(array $kimlik): bool
+    public function canOpen(array $kimlik): bool
     {
-        return ($kimlik['hesap_acilabilir'] ?? false)
+        return ($kimlik['can_create_account'] ?? false)
             && ($kimlik['email_verified'] ?? false);
     }
 
     /**
      * @param  array{sub: string, name: string, email: string, email_verified: bool, rol?: ?string}  $kimlik
      */
-    public function ac(array $kimlik): User
+    public function open(array $kimlik): User
     {
         return User::create([
             /* Ad merkezden gelir; boşsa adres okunabilir tek şey. */
@@ -71,7 +71,7 @@ class AccountOpener
              */
             'password' => Str::random(64),
 
-            'rol_id' => $this->rol($kimlik['rol'] ?? null),
+            'rol_id' => $this->roleId($kimlik['role'] ?? null),
             'aktif' => true,
 
             /*
@@ -103,7 +103,7 @@ class AccountOpener
      * biri, buradaki hiçbir yöneticinin haberi olmadan kendini burada da
      * yönetici yapabilirdi.
      */
-    private function rol(?string $slug): ?int
+    private function roleId(?string $slug): ?int
     {
         if (blank($slug)) {
             return null;
@@ -111,7 +111,7 @@ class AccountOpener
 
         $rol = Role::where('slug', $slug)->first();
 
-        if ($rol === null || ($rol->yonetici && ! config('identity.yonetici_devri'))) {
+        if ($rol === null || ($rol->yonetici && ! config('identity.admin_takeover'))) {
             return null;
         }
 

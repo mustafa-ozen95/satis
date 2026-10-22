@@ -55,7 +55,7 @@ class ConnectionFile
      *
      * @throws RuntimeException dosya var ama çözülemiyorsa (APP_KEY değişmiş olabilir)
      */
-    public function baglanti(): ?array
+    public function connection(): ?array
     {
         $yol = $this->dizin.'/connection.json';
 
@@ -69,22 +69,22 @@ class ConnectionFile
             throw new RuntimeException('Bağlantı dosyası çözülemedi (APP_KEY değişmiş olabilir): '.$yol);
         }
 
-        return self::temizle((array) $veri);
+        return self::clear((array) $veri);
     }
 
     /** @param  array<string, mixed>  $baglanti */
-    public function baglantiYaz(array $baglanti): void
+    public function writeConnection(array $baglanti): void
     {
-        $this->yaz('connection.json', $this->sifre->encryptString(json_encode(self::temizle($baglanti), JSON_THROW_ON_ERROR)));
+        $this->write('connection.json', $this->sifre->encryptString(json_encode(self::clear($baglanti), JSON_THROW_ON_ERROR)));
     }
 
-    public function baglantiSil(): void
+    public function deleteConnection(): void
     {
         @unlink($this->dizin.'/connection.json');
     }
 
     /** @return array<string, mixed>|null */
-    public function durum(): ?array
+    public function status(): ?array
     {
         $yol = $this->dizin.'/state.json';
         $veri = is_file($yol) ? json_decode((string) file_get_contents($yol), true) : null;
@@ -92,9 +92,9 @@ class ConnectionFile
         return is_array($veri) && in_array($veri['durum'] ?? null, self::DURUMLAR, true) ? $veri : null;
     }
 
-    public function asama(): ?string
+    public function stage(): ?string
     {
-        return $this->durum()['durum'] ?? null;
+        return $this->status()['durum'] ?? null;
     }
 
     /**
@@ -106,15 +106,15 @@ class ConnectionFile
      *
      * @param  array<string, mixed>  $ek
      */
-    public function asamaYaz(string $durum, ?string $aciklama = null, array $ek = []): void
+    public function writeStage(string $durum, ?string $aciklama = null, array $ek = []): void
     {
         if (! in_array($durum, self::DURUMLAR, true)) {
             throw new RuntimeException('Bilinmeyen aşama: '.$durum);
         }
 
-        $onceki = $durum === 'tasinacak' ? [] : ($this->durum() ?? []);
+        $onceki = $durum === 'tasinacak' ? [] : ($this->status() ?? []);
 
-        $this->yaz('state.json', json_encode(array_filter([
+        $this->write('state.json', json_encode(array_filter([
             ...$onceki,
             ...$ek,
             'durum' => $durum,
@@ -123,7 +123,7 @@ class ConnectionFile
         ], fn ($v) => $v !== null), JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
         if ($durum === 'basarisiz') {
-            $this->baglantiSil();
+            $this->deleteConnection();
         }
     }
 
@@ -133,9 +133,9 @@ class ConnectionFile
      * Panel (uygulama kullanıcısı) süreç yöneticisine erişemez; dosyayı root
      * olarak koşan dc-restart görür ve yalnızca bu tek işi yapar.
      */
-    public function yenidenBaslatIste(): bool
+    public function requestRestart(): bool
     {
-        return $this->yaz('restart', date('c'), false);
+        return $this->write('restart', date('c'), false);
     }
 
     /**
@@ -144,9 +144,9 @@ class ConnectionFile
      * Değer base64'tür: parolada boşluk, tırnak ya da satır sonu olabilir ve
      * kabuk onu ne eval ile ne de düz okuma ile güvenle taşır.
      */
-    public function ortamSatirlari(): string
+    public function envLines(): string
     {
-        $b = $this->baglanti() ?? throw new RuntimeException('Bağlantı dosyası yok.');
+        $b = $this->connection() ?? throw new RuntimeException('Bağlantı dosyası yok.');
 
         return implode("\n", [
             'DB_HOST='.base64_encode($b['host']),
@@ -162,9 +162,9 @@ class ConnectionFile
      *
      * Parola komut satırına GİRMEZ: orada süreç listesinden okunur.
      */
-    public function istemciAyari(): string
+    public function clientConfig(): string
     {
-        return self::istemciMetni($this->baglanti() ?? throw new RuntimeException('Bağlantı dosyası yok.'));
+        return self::clientText($this->connection() ?? throw new RuntimeException('Bağlantı dosyası yok.'));
     }
 
     /**
@@ -174,7 +174,7 @@ class ConnectionFile
      *
      * @param  array{host: string, port: int, username: string, password: string}  $b
      */
-    public static function istemciMetni(array $b): string
+    public static function clientText(array $b): string
     {
         $tirnakla = fn (string $s): string => '"'.addcslashes($s, "\\\"\n\r\t").'"';
 
@@ -189,7 +189,7 @@ class ConnectionFile
      * @param  array<string, mixed>  $b
      * @return array{host: string, port: int, database: string, username: string, password: string}
      */
-    public static function temizle(array $b): array
+    public static function clear(array $b): array
     {
         return [
             'host' => trim((string) ($b['host'] ?? '')),
@@ -201,7 +201,7 @@ class ConnectionFile
     }
 
     /** Geçici dosyaya yazıp yerine taşır: yarım yazılmış bir dosya okunmasın. */
-    private function yaz(string $ad, string $icerik, bool $firlat = true): bool
+    private function write(string $ad, string $icerik, bool $firlat = true): bool
     {
         if (! is_dir($this->dizin) && ! @mkdir($this->dizin, 0700, true) && ! is_dir($this->dizin)) {
             return $firlat ? throw new RuntimeException('Dizin açılamadı: '.$this->dizin) : false;

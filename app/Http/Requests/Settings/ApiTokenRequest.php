@@ -39,7 +39,7 @@ class ApiTokenRequest extends FormRequest
      */
     public function rules(): array
     {
-        $yeni = $this->route('jeton') === null;
+        $yeni = $this->route('token') === null;
 
         return [
             'name' => ['required', 'string', 'max:80'],

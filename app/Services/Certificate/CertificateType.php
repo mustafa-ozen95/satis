@@ -30,9 +30,9 @@ class CertificateType
     private const PANEL = '/etc/dc/sertifika-panel';
 
     /** @return array<string, mixed>|null */
-    public function durum(): ?array
+    public function status(): ?array
     {
-        return $this->oku(self::DURUM);
+        return $this->read(self::DURUM);
     }
 
     /**
@@ -44,21 +44,21 @@ class CertificateType
      *
      * @return list<array{ad: string, deger: string}>|null
      */
-    public function kayitlar(): ?array
+    public function records(): ?array
     {
-        $veri = $this->oku(self::PANEL.'/kayitlar.json');
+        $veri = $this->read(self::PANEL.'/kayitlar.json');
 
         return $veri === null ? null : array_values((array) ($veri['kayitlar'] ?? []));
     }
 
     /** @return array<string, mixed>|null */
-    public function sonIslem(): ?array
+    public function lastJob(): ?array
     {
-        return $this->oku(self::PANEL.'/islem.json');
+        return $this->read(self::PANEL.'/islem.json');
     }
 
     /** Sunucu henüz isteği almadıysa ekran "işleniyor" der. */
-    public function istekBekliyorMu(): bool
+    public function requestPending(): bool
     {
         return is_file(self::PANEL.'/istek.json');
     }
@@ -72,15 +72,15 @@ class CertificateType
      *
      * @return list<array{ad: string, deger: string, yayildi: bool}>
      */
-    public function yayilmaDurumu(): array
+    public function propagationStatus(): array
     {
         $liste = [];
 
-        foreach ($this->kayitlar() ?? [] as $kayit) {
+        foreach ($this->records() ?? [] as $kayit) {
             $liste[] = [
                 'ad' => (string) $kayit['ad'],
                 'deger' => (string) $kayit['deger'],
-                'yayildi' => $this->txtVarMi((string) $kayit['ad'], (string) $kayit['deger']),
+                'yayildi' => $this->txtExists((string) $kayit['ad'], (string) $kayit['deger']),
             ];
         }
 
@@ -92,7 +92,7 @@ class CertificateType
      *
      * @param  'baslat'|'tamamla'  $eylem
      */
-    public function istekBirak(string $eylem): bool
+    public function leaveRequest(string $eylem): bool
     {
         if (! is_dir(self::PANEL) || ! is_writable(self::PANEL)) {
             return false;
@@ -114,7 +114,7 @@ class CertificateType
      * çözümleyicisi de dışarıyı görüyor. Sorgu başarısızsa "yayılmadı"
      * denir — eksik bilgi "tamam" sayılmamalı.
      */
-    private function txtVarMi(string $ad, string $deger): bool
+    private function txtExists(string $ad, string $deger): bool
     {
         try {
             $kayitlar = @dns_get_record($ad, DNS_TXT) ?: [];
@@ -134,7 +134,7 @@ class CertificateType
     }
 
     /** @return array<string, mixed>|null */
-    private function oku(string $yol): ?array
+    private function read(string $yol): ?array
     {
         if (! is_file($yol) || ! is_readable($yol)) {
             return null;

@@ -36,7 +36,7 @@ class Role extends Model
         return $this->hasMany(User::class, 'rol_id');
     }
 
-    public function scopeSirali(Builder $query): void
+    public function scopeOrdered(Builder $query): void
     {
         $query->orderBy('sira')->orderBy('label');
     }

@@ -104,15 +104,15 @@ TEMEL KURALLAR
     kullan.
 
 FİYAT KALEMLERİ:
-{fiyat_baglami}
+{price_context}
 
 BİLGİ BANKASI:
-{bilgi_baglami}
+{knowledge_context}
 
-{kosullar}
+{terms}
 
 MÜŞTERİ TALEBİ:
-{talep}
+{request}
 
 Yanıtın iki alandan oluşur:
 - musteri_maili: müşteriye gönderilecek, resmi ve anlaşılır teklif metni.
@@ -173,9 +173,9 @@ PROMPT;
         protected KnowledgeBaseService $knowledgeBase,
     ) {}
 
-    public function generateTeklif(string $talep): array
+    public function generateQuote(string $talep): array
     {
-        $kalemler = $this->ilgiliFiyatKalemleri($talep);
+        $kalemler = $this->relatedPriceItems($talep);
         $modeleGiden = $kalemler->take(self::AZAMI_KALEM);
 
         $kbResults = $this->knowledgeBase->query($talep, 8);
@@ -183,7 +183,7 @@ PROMPT;
         $prompt = $this->buildPrompt($talep, $modeleGiden, $kbResults, $kalemler->count());
 
         /* Biçim modele ŞEMA olarak verilir; metin ricası değil. */
-        $raw = $this->llm->generateText($prompt, LlmService::sistemIstemi(), self::YANIT_SEMASI);
+        $raw = $this->llm->generateText($prompt, LlmService::systemPrompt(), self::YANIT_SEMASI);
 
         $parsed = $this->parseResponse($raw);
 
@@ -194,7 +194,7 @@ PROMPT;
          * model yazmayınca teklif süresiz gider. Fiyat geçen her yanıta
          * eklenir, iki kez eklenmez.
          */
-        $parsed['musteri_maili'] = QuoteTerms::mailEkle($parsed['musteri_maili']);
+        $parsed['musteri_maili'] = QuoteTerms::appendMail($parsed['musteri_maili']);
 
         $parsed['kullanilan_bilgi_sayisi'] = count($kbResults);
         $parsed['kullanilan_fiyat_kalemi_sayisi'] = $modeleGiden->count();
@@ -221,14 +221,14 @@ PROMPT;
                 .'satış ekibinden teyit iste.)';
         }
 
-        $ad = Company::ad();
+        $ad = Company::name();
 
-        return strtr($this->sablon(), [
+        return strtr($this->template(), [
             '{sirket_adina}' => $ad === '' ? '' : "{$ad} adına ",
-            '{talep}' => $talep,
-            '{fiyat_baglami}' => $fiyatlar,
-            '{bilgi_baglami}' => $this->formatKbResults($kbResults),
-            '{kosullar}' => QuoteTerms::istemMetni(),
+            '{request}' => $talep,
+            '{price_context}' => $fiyatlar,
+            '{knowledge_context}' => $this->formatKbResults($kbResults),
+            '{terms}' => QuoteTerms::promptText(),
         ]);
     }
 
@@ -240,9 +240,9 @@ PROMPT;
      * yeniden başlatılması gerekmez. Küçük bir dosya okuması, dakikalar
      * süren bir LLM çağrısının yanında ölçülemez.
      */
-    protected function sablon(): string
+    protected function template(): string
     {
-        return Company::istemSablonu() ?? self::PROMPT_TEMPLATE;
+        return Company::promptTemplate() ?? self::PROMPT_TEMPLATE;
     }
 
     protected function parseResponse(string $raw): array
@@ -303,7 +303,7 @@ PROMPT;
          * olduğu için en yeni nesil listenin altında kalabilir ve model onu
          * "yok" sayabilir (bkz. App\Support\ProductGeneration).
          */
-        $enYuksekler = ProductGeneration::enYuksekler($items);
+        $enYuksekler = ProductGeneration::topOnes($items);
 
         $lines = [];
 
@@ -315,7 +315,7 @@ PROMPT;
                 ."  Fiyat: {$item->price} {$item->currency} / {$item->unit}\n"
                 ."  KDV: {$kdvNotu}";
 
-            $nesil = ProductGeneration::satir($item, $enYuksekler);
+            $nesil = ProductGeneration::row($item, $enYuksekler);
 
             if ($nesil !== null) {
                 $lines[] = $nesil;
@@ -362,7 +362,7 @@ PROMPT;
      *
      * @return array{sozcukler: list<string>, olculer: list<string>}
      */
-    protected function talepSozcukleri(string $talep): array
+    protected function requestKeywords(string $talep): array
     {
         $metin = mb_strtolower($talep);
 
@@ -390,7 +390,7 @@ PROMPT;
      * tamamını görmeli. Ölçü eşleşmesi (64gb, /29) iki kat sayılır; teklifi
      * doğru yapan ayrıntı orada.
      */
-    protected function kalemPuani(PriceItem $kalem, array $sozcukler, array $olculer): int
+    protected function itemScore(PriceItem $kalem, array $sozcukler, array $olculer): int
     {
         $kategori = mb_strtolower((string) $kalem->category);
         $ad = mb_strtolower((string) $kalem->name);
@@ -402,11 +402,11 @@ PROMPT;
         $puan = 0;
 
         foreach ($sozcukler as $sozcuk) {
-            if ($this->geciyor($kategori, $sozcuk)) {
+            if ($this->mentions($kategori, $sozcuk)) {
                 $puan += self::AGIRLIK['kategori'];
-            } elseif ($this->geciyor($ad, $sozcuk)) {
+            } elseif ($this->mentions($ad, $sozcuk)) {
                 $puan += self::AGIRLIK['ad'];
-            } elseif ($this->geciyor($not, $sozcuk)) {
+            } elseif ($this->mentions($not, $sozcuk)) {
                 $puan += self::AGIRLIK['not'];
             }
         }
@@ -429,7 +429,7 @@ PROMPT;
      * gönderirdi; bir fiyat listesinde "ip"nin alt dize olarak geçtiği
      * kalemler sözcük olarak geçtiklerinden fazla olabilir.
      */
-    protected function geciyor(string $metin, string $sozcuk): bool
+    protected function mentions(string $metin, string $sozcuk): bool
     {
         if (mb_strlen($sozcuk) >= 3) {
             return str_contains($metin, $sozcuk);
@@ -451,22 +451,22 @@ PROMPT;
      *
      * Sıralama puana göredir: kırpma gerekirse en ilgisiz kalem düşer.
      */
-    protected function ilgiliFiyatKalemleri(string $talep): Collection
+    protected function relatedPriceItems(string $talep): Collection
     {
-        $tumu = PriceItem::aktif()->get();
+        $tumu = PriceItem::active()->get();
 
         if ($tumu->isEmpty()) {
             return $tumu;
         }
 
-        ['sozcukler' => $sozcukler, 'olculer' => $olculer] = $this->talepSozcukleri($talep);
+        ['sozcukler' => $sozcukler, 'olculer' => $olculer] = $this->requestKeywords($talep);
 
         if ($sozcukler === [] && $olculer === []) {
             return $tumu;
         }
 
         $puanlar = $tumu->mapWithKeys(fn (PriceItem $k): array => [
-            $k->id => $this->kalemPuani($k, $sozcukler, $olculer),
+            $k->id => $this->itemScore($k, $sozcukler, $olculer),
         ]);
 
         $puanliKategoriler = $tumu

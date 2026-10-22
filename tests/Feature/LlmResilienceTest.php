@@ -26,7 +26,7 @@ class LlmResilienceTest extends TestCase
         config([
             'services.gemini.key' => 'deneme-anahtar',
             'services.gemini.model' => 'gemini-birincil',
-            'services.gemini.yedek_model' => 'gemini-yedek',
+            'services.gemini.fallback_model' => 'gemini-yedek',
             'services.groq.key' => null,
 
             /* Sınamada beklemeyelim. */
@@ -91,7 +91,7 @@ class LlmResilienceTest extends TestCase
      */
     public function test_kalici_hata_yeniden_denenmez(): void
     {
-        config(['services.gemini.yedek_model' => null]);
+        config(['services.gemini.fallback_model' => null]);
 
         $sayac = 0;
 
@@ -115,7 +115,7 @@ class LlmResilienceTest extends TestCase
     {
         Http::fake(['*' => Http::response(['candidates' => [['content' => ['parts' => [['text' => '{}']]]]]], 200)]);
 
-        app(LlmService::class)->generateText('talep', LlmService::sistemIstemi(), [
+        app(LlmService::class)->generateText('talep', LlmService::systemPrompt(), [
             'type' => 'OBJECT',
             'properties' => ['musteri_maili' => ['type' => 'STRING']],
         ]);
@@ -134,7 +134,7 @@ class LlmResilienceTest extends TestCase
      */
     public function test_saglayici_hata_govdesi_kisaltilir(): void
     {
-        config(['services.gemini.yedek_model' => null, 'services.llm.retry' => 1]);
+        config(['services.gemini.fallback_model' => null, 'services.llm.retry' => 1]);
 
         Http::fake(['*' => Http::response(['error' => ['message' => str_repeat('x', 5000)]], 400)]);
 

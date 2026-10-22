@@ -38,7 +38,7 @@ class QuoteListTest extends TestCase
         $this->teklif($baskasi, 'BAŞKASININ TEKLİFİ');
 
         $this->actingAs($ben)
-            ->get(route('teklif.create'))
+            ->get(route('quote.create'))
             ->assertOk()
             ->assertSee('BENİM TEKLİFİM')
             ->assertDontSee('BAŞKASININ TEKLİFİ');
@@ -52,7 +52,7 @@ class QuoteListTest extends TestCase
         $this->teklif($baskasi, 'BAŞKASININ TEKLİFİ');
 
         $this->actingAs($yonetici)
-            ->get(route('teklif.create'))
+            ->get(route('quote.create'))
             ->assertOk()
             ->assertSee('BAŞKASININ TEKLİFİ')
             /* Kimin istediği de görünür; yoksa "kim ne istemiş" yanıtsız kalır. */
@@ -68,7 +68,7 @@ class QuoteListTest extends TestCase
             $this->teklif($kullanici, "TEKLİF-{$i}");
         }
 
-        $yanit = $this->actingAs($kullanici)->get(route('teklif.create'))->assertOk();
+        $yanit = $this->actingAs($kullanici)->get(route('quote.create'))->assertOk();
 
         /* En yeniler üstte: 20…6 gelir, 5 ve öncesi gelmez. */
         $yanit->assertSee('TEKLİF-20')->assertSee('TEKLİF-6')->assertDontSee('TEKLİF-5');
@@ -82,7 +82,7 @@ class QuoteListTest extends TestCase
         $this->teklif($kullanici, 'TEK TEKLİF');
 
         $this->actingAs($kullanici)
-            ->get(route('teklif.create'))
+            ->get(route('quote.create'))
             ->assertOk()
             ->assertDontSee('Devamını gör');
     }
@@ -99,7 +99,7 @@ class QuoteListTest extends TestCase
         $altinci = Conversation::where('ilk_talep', 'TEKLİF-6')->firstOrFail();
 
         $this->actingAs($kullanici)
-            ->get(route('teklif.daha', ['oncesi' => $altinci->id]))
+            ->get(route('quote.more', ['oncesi' => $altinci->id]))
             ->assertOk()
             ->assertSee('TEKLİF-5')
             ->assertSee('TEKLİF-1')
@@ -121,7 +121,7 @@ class QuoteListTest extends TestCase
         $sonuncu = $this->teklif($ben, 'BENİM TEKLİFİM');
 
         $this->actingAs($ben)
-            ->get(route('teklif.daha', ['oncesi' => $sonuncu->id + 100]))
+            ->get(route('quote.more', ['oncesi' => $sonuncu->id + 100]))
             ->assertOk()
             ->assertDontSee('BAŞKASININ TEKLİFİ');
     }

@@ -21,7 +21,7 @@ class SchedulerTest extends TestCase
             ->map(fn ($olay): string => (string) $olay->command)
             ->implode(' ');
 
-        foreach (['kimlik:esitle', 'denetim:dogrula', 'guncelleme:denetle', 'bilgi:indeksle', 'bilgi:siteden'] as $komut) {
+        foreach (['identity:sync', 'audit:verify', 'update:check', 'knowledge:index', 'knowledge:site'] as $komut) {
             $this->assertStringContainsString($komut, $komutlar, "{$komut} zamanlayıcıda yok.");
         }
     }
@@ -30,7 +30,7 @@ class SchedulerTest extends TestCase
     public function test_site_turu_haftalik_kosar(): void
     {
         $olay = collect(app(Schedule::class)->events())
-            ->first(fn ($olay): bool => str_contains((string) $olay->command, 'bilgi:siteden'));
+            ->first(fn ($olay): bool => str_contains((string) $olay->command, 'knowledge:site'));
 
         $this->assertNotNull($olay);
         $this->assertSame('30 5 * * 1', $olay->expression);

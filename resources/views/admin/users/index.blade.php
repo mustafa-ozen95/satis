@@ -7,7 +7,7 @@
         <p class="page-head__subtitle">Panele erişecek kullanıcıları, yetkilerini ve şifre sıfırlama isteklerini buradan yönetin.</p>
       </div>
       <div class="page-head__actions">
-        <a href="#" class="btn btn--primary btn--sm" data-modal-open="kullanici-ekle"><x-icon name="plus" />Kullanıcı ekle</a>
+        <a href="#" class="btn btn--primary btn--sm" data-modal-open="user-add"><x-icon name="plus" />Kullanıcı ekle</a>
       </div>
     </header>
 
@@ -27,7 +27,7 @@
             <tbody>
               @foreach ($yetkiTalepleri as $t)
               <tr>
-                <td data-label="Kullanıcı" class="satir-baslik">{{ $t->user->name }}</td>
+                <td data-label="Kullanıcı" class="row-title">{{ $t->user->name }}</td>
                 <td data-label="Talep edilen yetkiler">
                   {{ collect(['perm_teklif' => 'Teklif Oluştur', 'perm_bilgi' => 'Bilgi Bankası', 'perm_fiyat' => 'Fiyat Kalemleri'])
                       ->filter(fn ($etiket, $alan) => $t->$alan)
@@ -36,11 +36,11 @@
                 <td data-label="Talep zamanı" class="table__cell--mono">{{ $t->created_at->format('d.m.Y H:i') }}</td>
                 <td>
                   <div class="table__row-actions">
-                    <form method="post" action="{{ route('admin.yetki-talepleri.onayla', $t) }}">
+                    <form method="post" action="{{ route('admin.permission-requests.approve', $t) }}">
                       @csrf
                       <button type="submit" class="btn btn--sm btn--primary"><x-icon name="check" />Onayla</button>
                     </form>
-                    <form method="post" action="{{ route('admin.yetki-talepleri.reddet', $t) }}">
+                    <form method="post" action="{{ route('admin.permission-requests.reject', $t) }}">
                       @csrf
                       <button type="submit" class="btn btn--sm">Reddet</button>
                     </form>
@@ -77,7 +77,7 @@
             <tbody>
               @foreach ($kullanicilar as $k)
               <tr>
-                <td data-label="Kullanıcı" class="satir-baslik">{{ $k->name }}</td>
+                <td data-label="Kullanıcı" class="row-title">{{ $k->name }}</td>
                 <td data-label="E-posta" class="mono text-muted">{{ $k->email ?? '—' }}</td>
                 {{-- Rozet rengi rolün kendi kaydından gelir; ekrana koda gömülü renk yazılmaz. --}}
                 <td data-label="Rol">
@@ -116,7 +116,7 @@
                     <a href="#" class="btn btn--sm" data-modal-open="kullanici-duzenle-{{ $k->id }}"><x-icon name="edit" />Düzenle</a>
                     <form
                       method="post"
-                      action="{{ route('admin.kullanicilar.destroy', $k) }}"
+                      action="{{ route('admin.users.destroy', $k) }}"
                       data-confirm="&quot;{{ $k->email }}&quot; hesabı kalıcı olarak silinecek."
                       data-confirm-title="Kullanıcıyı sil"
                       data-confirm-variant="danger"
@@ -150,7 +150,7 @@
   id="kullanici-duzenle-{{ $k->id }}"
   data-modal
   @unless ($duzenleAcik[$k->id]) hidden @endunless
-  @if ($duzenleAcik[$k->id]) data-modal-acik data-modal-kapanis="{{ route('admin.kullanicilar.index') }}" @endif
+  @if ($duzenleAcik[$k->id]) data-modal-visible data-modal-close-url="{{ route('admin.users.index') }}" @endif
   role="dialog" aria-modal="true" aria-labelledby="kullanici-duzenle-{{ $k->id }}-baslik"
 >
   <div class="modal__box modal__box--wide">
@@ -159,7 +159,7 @@
       <button type="button" class="modal__close" data-modal-close aria-label="Kapat">×</button>
     </header>
 
-    <form method="post" action="{{ route('admin.kullanicilar.update', $k) }}">
+    <form method="post" action="{{ route('admin.users.update', $k) }}">
       @csrf
       <input type="hidden" name="_form" value="duzenle-{{ $k->id }}">
       <div class="modal__body">
@@ -241,19 +241,19 @@
 
 <div
   class="modal"
-  id="kullanici-ekle"
+  id="user-add"
   data-modal
   @unless ($buFormEkle) hidden @endunless
-  @if ($buFormEkle) data-modal-acik data-modal-kapanis="{{ route('admin.kullanicilar.index') }}" @endif
-  role="dialog" aria-modal="true" aria-labelledby="kullanici-ekle-baslik"
+  @if ($buFormEkle) data-modal-visible data-modal-close-url="{{ route('admin.users.index') }}" @endif
+  role="dialog" aria-modal="true" aria-labelledby="user-add-title"
 >
   <div class="modal__box modal__box--wide">
     <header class="modal__header">
-      <h2 class="modal__title" id="kullanici-ekle-baslik">Kullanıcı ekle</h2>
+      <h2 class="modal__title" id="user-add-title">Kullanıcı ekle</h2>
       <button type="button" class="modal__close" data-modal-close aria-label="Kapat">×</button>
     </header>
 
-    <form method="post" action="{{ route('admin.kullanicilar.store') }}">
+    <form method="post" action="{{ route('admin.users.store') }}">
       @csrf
       <input type="hidden" name="_form" value="ekle">
       <div class="modal__body">
@@ -269,12 +269,12 @@
 
         <div class="field-row">
           <div class="field">
-            <label class="field__label" for="yeni-ad">Ad soyad</label>
-            <input type="text" class="input" id="yeni-ad" name="ad" value="{{ old('ad') }}" aria-invalid="{{ $errors->has('ad') ? 'true' : 'false' }}" required>
+            <label class="field__label" for="new-name">Ad soyad</label>
+            <input type="text" class="input" id="new-name" name="ad" value="{{ old('ad') }}" aria-invalid="{{ $errors->has('ad') ? 'true' : 'false' }}" required>
           </div>
           <div class="field">
-            <label class="field__label" for="yeni-sifre">Şifre</label>
-            <input type="password" class="input" id="yeni-sifre" name="sifre" aria-invalid="{{ $errors->has('sifre') ? 'true' : 'false' }}" required>
+            <label class="field__label" for="new-password">Şifre</label>
+            <input type="password" class="input" id="new-password" name="sifre" aria-invalid="{{ $errors->has('sifre') ? 'true' : 'false' }}" required>
           </div>
         </div>
 
@@ -289,14 +289,14 @@
           merkez kimliğiyle bu hesaba girerdi.
         --}}
         <div class="field">
-          <label class="field__label" for="yeni-eposta">E-posta <span class="text-muted">(giriş anahtarı)</span></label>
-          <input type="email" class="input input--mono" id="yeni-eposta" name="eposta" value="{{ old('eposta') }}" placeholder="ad.soyad@ornek.test" aria-invalid="{{ $errors->has('eposta') ? 'true' : 'false' }}" required>
+          <label class="field__label" for="new-email">E-posta <span class="text-muted">(giriş anahtarı)</span></label>
+          <input type="email" class="input input--mono" id="new-email" name="eposta" value="{{ old('eposta') }}" placeholder="ad.soyad@ornek.test" aria-invalid="{{ $errors->has('eposta') ? 'true' : 'false' }}" required>
           <span class="field__hint">Hem parolayla giriş hem merkezle eşleşme bu adresten geçer; merkezdekiyle aynı olmalı.</span>
         </div>
 
         <div class="field">
-          <label class="field__label" for="yeni-rol">Rol</label>
-          <select class="select" id="yeni-rol" name="rol">
+          <label class="field__label" for="new-role">Rol</label>
+          <select class="select" id="new-role" name="rol">
             @foreach ($roller as $rol)
               <option value="{{ $rol->slug }}" {{ old('rol', 'muhasebe') === $rol->slug ? 'selected' : '' }}>{{ $rol->label }}</option>
             @endforeach

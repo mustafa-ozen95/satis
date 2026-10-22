@@ -11,14 +11,14 @@
             <x-ui.panel title="Jetonlar"
                         subtitle="Sır yalnızca çıkarıldığı anda gösterilir. Kaybolursa geri gösterilemez; yenisi üretilir.">
                 <x-slot:actions>
-                    <a href="{{ route('admin.api-jetonlari.belge') }}" class="btn btn--sm">Belge</a>
-                    <button type="button" class="btn btn--primary btn--sm" data-modal-open="jeton-ekle">Jeton çıkar</button>
+                    <a href="{{ route('admin.api-tokens.docs') }}" class="btn btn--sm">Belge</a>
+                    <button type="button" class="btn btn--primary btn--sm" data-modal-open="token-add">Jeton çıkar</button>
                 </x-slot:actions>
 
                 @forelse ($tokens as $token)
                     <div class="grid-row grid-row--static ayar-row">
                         <span>
-                            <a href="{{ route('admin.api-jetonlari.show', $token) }}">{{ $token->name }}</a>
+                            <a href="{{ route('admin.api-tokens.show', $token) }}">{{ $token->name }}</a>
                             <div class="mono text-sm text-muted">{{ $token->prefix }}…</div>
                         </span>
                         <span>
@@ -39,7 +39,7 @@
                             @endif
                         </span>
                         <span class="text-right">
-                            <a href="{{ route('admin.api-jetonlari.show', $token) }}" class="btn btn--sm">Düzenle</a>
+                            <a href="{{ route('admin.api-tokens.show', $token) }}" class="btn btn--sm">Düzenle</a>
                         </span>
                     </div>
                 @empty
@@ -49,38 +49,38 @@
         </div>
     </div>
 
-    <x-ui.modal id="jeton-ekle" title="API jetonu çıkar" wide>
-        <form method="POST" action="{{ route('admin.api-jetonlari.store') }}"
+    <x-ui.modal id="token-add" title="API jetonu çıkar" wide>
+        <form method="POST" action="{{ route('admin.api-tokens.store') }}"
               data-confirm="Yeni bir API jetonu çıkarılacak. Sır yalnızca bir kez gösterilir."
               data-confirm-title="Jeton çıkar">
             @csrf
             <div class="modal__body stack">
-                <x-form.field name="name" label="Jeton adı" id="jeton-adi"
+                <x-form.field name="name" label="Jeton adı" id="token-name"
                               hint="Nerede kullanıldığı yazılsın; iptal ederken hangisi olduğu bilinmeli.">
-                    <x-form.input name="name" id="jeton-adi" required placeholder="teklif-botu" />
+                    <x-form.input name="name" id="token-name" required placeholder="teklif-botu" />
                 </x-form.field>
 
                 {{--
                     Jeton sahibi adına konuşur ve onun yetkilerini aşamaz.
                     Sonradan değiştirilemez.
                 --}}
-                <x-form.field name="user" label="Sahibi" id="jeton-sahibi"
+                <x-form.field name="user" label="Sahibi" id="token-owner"
                               hint="Jeton bu kullanıcının yetkilerini taşır ve onları aşamaz. Sonradan değiştirilemez.">
-                    <x-form.select name="user" id="jeton-sahibi" :options="$users" />
+                    <x-form.select name="user" id="token-owner" :options="$users" />
                 </x-form.field>
 
-                <x-form.field name="lifetime_days" label="Ömür (gün)" id="jeton-omur"
+                <x-form.field name="lifetime_days" label="Ömür (gün)" id="token-lifetime"
                               hint="0 ya da boş: süresiz. Süresiz jeton unutulur, unutulan jeton sızar.">
-                    <x-form.input type="number" name="lifetime_days" id="jeton-omur" min="0" max="3650"
+                    <x-form.input type="number" name="lifetime_days" id="token-lifetime" min="0" max="3650"
                                   :value="$defaultLifetime ?: null" />
                 </x-form.field>
 
-                <x-form.field name="allowed_ips" label="İzinli adresler" id="jeton-adresler"
+                <x-form.field name="allowed_ips" label="İzinli adresler" id="token-addresses"
                               hint="Her satıra bir IP ya da ağ (192.0.2.0/24). Boş bırakılırsa her yerden kabul edilir.">
-                    <x-form.textarea name="allowed_ips" id="jeton-adresler" rows="3" class="input--mono" />
+                    <x-form.textarea name="allowed_ips" id="token-addresses" rows="3" class="input--mono" />
                 </x-form.field>
 
-                <x-form.field name="abilities" label="Yetkiler" id="jeton-yetkiler"
+                <x-form.field name="abilities" label="Yetkiler" id="token-abilities"
                               hint="Jeton yalnızca işaretlenenleri yapabilir; sahibinin yetkisi ayrıca sınırlar.">
                     <div class="stack">
                         @foreach ($resources as $resource)

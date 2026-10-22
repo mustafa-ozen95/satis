@@ -4,7 +4,7 @@
             <x-ui.page-head title="API belgesi"
                             subtitle="Uç listesi rotalardan üretilir; burada elle yazılmış ikinci bir liste yoktur.">
                 <x-slot:actions>
-                    <a href="{{ route('admin.api-jetonlari.index') }}" class="btn btn--sm">Jetonlar</a>
+                    <a href="{{ route('admin.api-tokens.index') }}" class="btn btn--sm">Jetonlar</a>
                 </x-slot:actions>
             </x-ui.page-head>
 
@@ -17,7 +17,7 @@
 
                     <pre class="code-block mono"><code>curl -H "Authorization: Bearer {{ $prefix }}_&lt;sır&gt;" \
      -H "Accept: application/json" \
-     {{ $baseUrl }}/fiyatlar</code></pre>
+     {{ $baseUrl }}/prices</code></pre>
 
                     <dl class="facts">
                         <div class="facts__row">

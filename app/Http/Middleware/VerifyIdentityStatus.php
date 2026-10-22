@@ -49,11 +49,11 @@ class VerifyIdentityStatus
     {
         $kullanici = $request->user();
 
-        if ($kullanici === null || ! $this->merkez->acikMi()) {
+        if ($kullanici === null || ! $this->merkez->isEnabled()) {
             return $next($request);
         }
 
-        $anahtar = 'kimlik:dogrulama:'.$kullanici->getKey();
+        $anahtar = 'identity:verify:'.$kullanici->getKey();
 
         if (Cache::has($anahtar)) {
             return $next($request);
@@ -69,7 +69,7 @@ class VerifyIdentityStatus
         }
 
         try {
-            $durumlar = $this->merkez->kimlikDurumlari([$bag->subject]);
+            $durumlar = $this->merkez->identityStatuses([$bag->subject]);
         } catch (Throwable $e) {
             report($e);
             Cache::put($anahtar, true, now()->addMinutes(self::HATA_BEKLEMESI));
@@ -78,10 +78,10 @@ class VerifyIdentityStatus
         }
 
         if (isset($durumlar[$bag->subject])) {
-            $this->esitleyici->uygula($kullanici, (array) $durumlar[$bag->subject]);
+            $this->esitleyici->apply($kullanici, (array) $durumlar[$bag->subject]);
         }
 
-        Cache::put($anahtar, true, now()->addMinutes((int) config('identity.dogrulama_dakika')));
+        Cache::put($anahtar, true, now()->addMinutes((int) config('identity.verify_minutes')));
 
         /*
          * Erişimi kalkan kişi İSTEĞİN ORTASINDA dışarı alınır; bir sonraki

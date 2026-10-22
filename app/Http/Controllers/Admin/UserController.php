@@ -27,9 +27,9 @@ class UserController extends Controller
 
         return view('admin.users.index', [
             'kullanicilar' => $kullanicilar,
-            'duzenleAcik' => FormStatus::duzenleHaritasi($kullanicilar->pluck('id')),
-            'buFormEkle' => FormStatus::ekle(),
-            'roller' => Role::sirali()->get(),
+            'duzenleAcik' => FormStatus::editMap($kullanicilar->pluck('id')),
+            'buFormEkle' => FormStatus::isAdd(),
+            'roller' => Role::ordered()->get(),
             'yetkiTalepleri' => PermissionRequest::with('user')
                 ->where('durum', 'bekliyor')
                 ->orderByDesc('created_at')
@@ -59,25 +59,25 @@ class UserController extends Controller
             'perm_fiyat' => $request->boolean('perm_fiyat'),
         ]);
 
-        app(ActivityRecorder::class)->kaydet(
+        app(ActivityRecorder::class)->log(
             'kullanici_ekle',
             "Kullanıcı açıldı: {$yeni->email} · {$yeni->name} · rol ".($yeni->rol?->slug ?? 'rolsüz')
-                .' · yetkiler '.$this->yetkiOzeti($yeni),
+                .' · yetkiler '.$this->permissionSummary($yeni),
             $yeni,
         );
 
-        return redirect()->route('admin.kullanicilar.index')->with('status', 'Kullanıcı eklendi.');
+        return redirect()->route('admin.users.index')->with('status', 'Kullanıcı eklendi.');
     }
 
-    public function update(UserUpdateRequest $request, User $kullanici): RedirectResponse
+    public function update(UserUpdateRequest $request, User $user): RedirectResponse
     {
         $validated = $request->validated();
 
-        $oncekiRol = $kullanici->rol?->slug ?? 'rolsüz';
-        $oncekiYetki = $this->yetkiOzeti($kullanici);
-        $oncekiAktif = $kullanici->aktif;
+        $oncekiRol = $user->rol?->slug ?? 'rolsüz';
+        $oncekiYetki = $this->permissionSummary($user);
+        $oncekiAktif = $user->aktif;
 
-        $kullanici->update([
+        $user->update([
             'name' => $validated['ad'],
             'email' => $validated['eposta'],
             'rol_id' => Role::where('slug', $validated['rol'])->value('id'),
@@ -89,7 +89,7 @@ class UserController extends Controller
              */
             'password' => ($validated['yeni_sifre'] ?? null)
                 ? Hash::make($validated['yeni_sifre'])
-                : $kullanici->password,
+                : $user->password,
             'aktif' => $request->boolean('aktif'),
             'perm_teklif' => $request->boolean('perm_teklif'),
             'perm_bilgi' => $request->boolean('perm_bilgi'),
@@ -103,17 +103,17 @@ class UserController extends Controller
          */
         $degisenler = [];
 
-        $yeniRol = $kullanici->fresh()->rol?->slug ?? 'rolsüz';
+        $yeniRol = $user->fresh()->rol?->slug ?? 'rolsüz';
 
         if ($oncekiRol !== $yeniRol) {
             $degisenler[] = "rol {$oncekiRol} → {$yeniRol}";
         }
 
-        if ($oncekiAktif !== $kullanici->aktif) {
-            $degisenler[] = $kullanici->aktif ? 'hesap açıldı' : 'hesap kapatıldı';
+        if ($oncekiAktif !== $user->aktif) {
+            $degisenler[] = $user->aktif ? 'hesap açıldı' : 'hesap kapatıldı';
         }
 
-        if ($oncekiYetki !== ($yeniYetki = $this->yetkiOzeti($kullanici))) {
+        if ($oncekiYetki !== ($yeniYetki = $this->permissionSummary($user))) {
             $degisenler[] = "yetkiler {$oncekiYetki} → {$yeniYetki}";
         }
 
@@ -121,60 +121,60 @@ class UserController extends Controller
             $degisenler[] = 'parola değiştirildi';
         }
 
-        app(ActivityRecorder::class)->kaydet(
+        app(ActivityRecorder::class)->log(
             'kullanici_guncelle',
-            "Kullanıcı güncellendi: {$kullanici->email}"
+            "Kullanıcı güncellendi: {$user->email}"
                 .($degisenler === [] ? ' · değişiklik yok' : ' · '.implode(', ', $degisenler)),
-            $kullanici,
+            $user,
         );
 
-        return redirect()->route('admin.kullanicilar.index')->with('status', 'Kullanıcı güncellendi.');
+        return redirect()->route('admin.users.index')->with('status', 'Kullanıcı güncellendi.');
     }
 
-    public function destroy(User $kullanici): RedirectResponse
+    public function destroy(User $user): RedirectResponse
     {
         $this->authorize('admin');
 
         /* Kayıt SİLMEDEN ÖNCE: silinen hesabın adı sonradan okunamaz. */
-        app(ActivityRecorder::class)->kaydet(
+        app(ActivityRecorder::class)->log(
             'kullanici_sil',
-            "Kullanıcı silindi: {$kullanici->email} · {$kullanici->name} · rol ".($kullanici->rol?->slug ?? 'rolsüz'),
+            "Kullanıcı silindi: {$user->email} · {$user->name} · rol ".($user->rol?->slug ?? 'rolsüz'),
         );
 
-        $kullanici->delete();
+        $user->delete();
 
-        return redirect()->route('admin.kullanicilar.index')->with('status', 'Kullanıcı silindi.');
+        return redirect()->route('admin.users.index')->with('status', 'Kullanıcı silindi.');
     }
 
-    public function onaylaYetkiTalebi(PermissionRequest $yetkiTalebi): RedirectResponse
+    public function approvePermissionRequest(PermissionRequest $permissionRequest): RedirectResponse
     {
         $this->authorize('admin');
 
-        $yetkiTalebi->user->update([
-            'perm_teklif' => $yetkiTalebi->perm_teklif,
-            'perm_bilgi' => $yetkiTalebi->perm_bilgi,
-            'perm_fiyat' => $yetkiTalebi->perm_fiyat,
+        $permissionRequest->user->update([
+            'perm_teklif' => $permissionRequest->perm_teklif,
+            'perm_bilgi' => $permissionRequest->perm_bilgi,
+            'perm_fiyat' => $permissionRequest->perm_fiyat,
         ]);
 
-        $yetkiTalebi->update(['durum' => 'onaylandi']);
+        $permissionRequest->update(['durum' => 'onaylandi']);
 
-        app(ActivityRecorder::class)->kaydet(
+        app(ActivityRecorder::class)->log(
             'yetki_talebi_onay',
-            "Yetki talebi onaylandı: {$yetkiTalebi->user->email} · yeni yetkiler "
-                .$this->yetkiOzeti($yetkiTalebi->user->fresh()),
-            $yetkiTalebi->user,
+            "Yetki talebi onaylandı: {$permissionRequest->user->email} · yeni yetkiler "
+                .$this->permissionSummary($permissionRequest->user->fresh()),
+            $permissionRequest->user,
         );
 
-        return redirect()->route('admin.kullanicilar.index')->with('status', 'Yetki talebi onaylandı.');
+        return redirect()->route('admin.users.index')->with('status', 'Yetki talebi onaylandı.');
     }
 
-    public function reddetYetkiTalebi(PermissionRequest $yetkiTalebi): RedirectResponse
+    public function rejectPermissionRequest(PermissionRequest $permissionRequest): RedirectResponse
     {
         $this->authorize('admin');
 
-        $yetkiTalebi->update(['durum' => 'reddedildi']);
+        $permissionRequest->update(['durum' => 'reddedildi']);
 
-        return redirect()->route('admin.kullanicilar.index')->with('status', 'Yetki talebi reddedildi.');
+        return redirect()->route('admin.users.index')->with('status', 'Yetki talebi reddedildi.');
     }
 
     /**
@@ -182,12 +182,12 @@ class UserController extends Controller
      * karşılaştırmak için. Tek yerde üretilir ki iki satır aynı biçimde
      * yazılsın ve karşılaştırma anlamlı olsun.
      */
-    private function yetkiOzeti(User $kullanici): string
+    private function permissionSummary(User $user): string
     {
         $acik = array_keys(array_filter([
-            'teklif' => $kullanici->perm_teklif,
-            'bilgi' => $kullanici->perm_bilgi,
-            'fiyat' => $kullanici->perm_fiyat,
+            'teklif' => $user->perm_teklif,
+            'bilgi' => $user->perm_bilgi,
+            'fiyat' => $user->perm_fiyat,
         ]));
 
         return $acik === [] ? 'yok' : implode('+', $acik);

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * bilgisi.
  *
  * ASIL VERİ BURADA. Chroma yalnızca bu satırlardan türetilen vektör
- * indeksidir; kaybolursa `bilgi:indeksle` ile yeniden kurulur, tersi mümkün
+ * indeksidir; kaybolursa `knowledge:index` ile yeniden kurulur, tersi mümkün
  * değildir.
  */
 class KnowledgeRecord extends Model
@@ -42,7 +42,7 @@ class KnowledgeRecord extends Model
      * Ham değer API'de ve Chroma'ya giden üstveride AYNEN durur: dışarıdaki
      * istemci etiketi değil, değeri bekliyor.
      */
-    public function kaynakEtiketi(): string
+    public function sourceLabel(): string
     {
         $ham = (string) $this->kaynak;
 
@@ -57,7 +57,7 @@ class KnowledgeRecord extends Model
     }
 
     /** Henüz indekslenmemiş ya da indekslendikten sonra değişmiş kayıtlar. */
-    public function scopeIndekslenmemis(Builder $query): void
+    public function scopeUnindexed(Builder $query): void
     {
         $query->whereNull('indekslendi')->orWhereColumn('updated_at', '>', 'indekslendi');
     }
@@ -68,7 +68,7 @@ class KnowledgeRecord extends Model
      * Chroma erişilemediğinde teklif üretimi tamamen bağlamsız kalmasın diye
      * var: anlamsal arama değil ama hiç bağlam olmamasından iyidir.
      */
-    public function scopeMetinde(Builder $query, string $arama): void
+    public function scopeInText(Builder $query, string $arama): void
     {
         $query->where(fn (Builder $i) => $i
             ->where('metin', 'like', "%{$arama}%")

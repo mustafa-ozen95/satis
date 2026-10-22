@@ -38,7 +38,7 @@ class Conversation extends Model
      * sayılmaz: orada beklenen bir yanıt yok, durumu zaten kendi rozetiyle
      * görünüyor.
      */
-    public function okunmamisMi(): bool
+    public function isUnread(): bool
     {
         if ($this->durum !== 'hazir') {
             return false;
@@ -63,7 +63,7 @@ class Conversation extends Model
     }
 
     /** Konuşma açıldı: bu andan öncesi okunmuş sayılır. */
-    public function okunduIsaretle(): void
+    public function markRead(): void
     {
         $this->forceFill(['okundu_at' => now()])->save();
     }

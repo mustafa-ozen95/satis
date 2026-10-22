@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Cache;
  */
 class ActivityChain
 {
-    private const LOCK = 'denetim:zincir';
+    private const LOCK = 'audit:chain';
 
     /**
      * Özet biçiminin güncel sürümü.
@@ -49,7 +49,7 @@ class ActivityChain
      *
      * @param  array<string, mixed>  $alanlar
      */
-    public function ekle(array $alanlar): ActivityLog
+    public function append(array $alanlar): ActivityLog
     {
         return Cache::lock(self::LOCK, 10)->block(self::BEKLEME, function () use ($alanlar): ActivityLog {
             /*
@@ -60,13 +60,13 @@ class ActivityChain
             $onceki = ActivityLog::query()
                 ->whereNotNull('ozet')
                 ->latest('id')
-                ->value('ozet') ?? $this->capa();
+                ->value('ozet') ?? $this->anchor();
 
             $log = new ActivityLog($alanlar);
             $log->created_at = $alanlar['created_at'] ?? now();
             $log->onceki_ozet = $onceki;
             $log->zincir_surumu = self::SURUM;
-            $log->ozet = $this->ozetle($log, $onceki);
+            $log->ozet = $this->digest($log, $onceki);
             $log->save();
 
             return $log;
@@ -83,9 +83,9 @@ class ActivityChain
      *
      * @return array{saglam: bool, bakilan: int, korumasiz: int, kirik_id: ?int, zaman: string}
      */
-    public function dogrula(): array
+    public function verify(): array
     {
-        $onceki = $this->capa();
+        $onceki = $this->anchor();
         $bakilan = 0;
         $korumasiz = 0;
         $kirik = null;
@@ -102,7 +102,7 @@ class ActivityChain
 
                     $bakilan++;
 
-                    if ($log->onceki_ozet !== $onceki || $log->ozet !== $this->ozetle($log, $onceki)) {
+                    if ($log->onceki_ozet !== $onceki || $log->ozet !== $this->digest($log, $onceki)) {
                         $kirik = $log->id;
 
                         return false;
@@ -133,7 +133,7 @@ class ActivityChain
      *
      * @return array{saglam: bool, bakilan: int, korumasiz: int, kirik_id: ?int, zaman: string}|null
      */
-    public function sonDogrulama(): ?array
+    public function lastVerification(): ?array
     {
         $sonuc = Cache::get((string) config('activity.verification_key'));
 
@@ -148,12 +148,12 @@ class ActivityChain
      * saklanır ve doğrulama oradan devam eder; bu olmadan her budama zinciri
      * kırık gösterirdi.
      */
-    public function capayiYaz(?string $ozet): void
+    public function writeAnchor(?string $ozet): void
     {
         Cache::forever((string) config('activity.chain_anchor_key'), $ozet);
     }
 
-    private function capa(): ?string
+    private function anchor(): ?string
     {
         $capa = Cache::get((string) config('activity.chain_anchor_key'));
 
@@ -167,7 +167,7 @@ class ActivityChain
      * değiştirilirse özet tutmaz. Sıralama sabittir, aksi hâlde aynı satır
      * farklı özetler üretirdi.
      */
-    private function ozetle(ActivityLog $log, ?string $onceki): string
+    private function digest(ActivityLog $log, ?string $onceki): string
     {
         $veri = implode('|', [
             $onceki ?? '',

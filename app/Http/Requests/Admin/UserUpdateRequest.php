@@ -21,13 +21,13 @@ class UserUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'yeni_sifre' => ['nullable', 'string', 'min:'.config('panel.parola_uzunluk')],
+            'yeni_sifre' => ['nullable', 'string', 'min:'.config('panel.password_length')],
             /* Gerekçesi UserAddRequest'te; kural aynı olmak zorunda. */
             'ad' => ['required', 'string', 'max:100'],
 
             'eposta' => [
                 'required', 'email', 'max:255',
-                Rule::unique('users', 'email')->ignore($this->route('kullanici')?->getKey()),
+                Rule::unique('users', 'email')->ignore($this->route('user')?->getKey()),
             ],
             'rol' => ['required', 'string', 'exists:roller,slug'],
             'aktif' => ['boolean'],

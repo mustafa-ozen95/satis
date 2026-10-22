@@ -21,14 +21,14 @@ class ContainerLayoutTest extends TestCase
 
     private const AD = 'sales';
 
-    private static function oku(string $yol): string
+    private static function read(string $yol): string
     {
         return (string) file_get_contents(self::KOK.'/'.$yol);
     }
 
     public function test_imajda_veritabani_ve_redis_sunucusu_yok(): void
     {
-        $d = self::oku('docker/Dockerfile');
+        $d = self::read('docker/Dockerfile');
 
         $this->assertStringNotContainsString('mariadb-server', $d);
         $this->assertStringNotContainsString('redis-server', $d);
@@ -39,7 +39,7 @@ class ContainerLayoutTest extends TestCase
 
     public function test_nginx_yalniz_80_dinler(): void
     {
-        $n = self::oku('docker/rootfs/etc/nginx/conf.d/'.self::AD.'.conf');
+        $n = self::read('docker/rootfs/etc/nginx/conf.d/'.self::AD.'.conf');
 
         $this->assertStringContainsString('listen 80 default_server;', $n);
         $this->assertStringNotContainsString('443', $n);
@@ -48,7 +48,7 @@ class ContainerLayoutTest extends TestCase
 
     public function test_baslatici_veritabanini_ortamdan_alir_ve_bekler(): void
     {
-        $b = self::oku('docker/rootfs/usr/local/bin/'.self::AD.'-entrypoint');
+        $b = self::read('docker/rootfs/usr/local/bin/'.self::AD.'-entrypoint');
 
         $this->assertStringContainsString(': "${DB_HOST:=db}"', $b);
         $this->assertStringContainsString(': "${REDIS_HOST:=redis}"', $b);
@@ -61,7 +61,7 @@ class ContainerLayoutTest extends TestCase
 
     public function test_baslatici_sirri_gunluge_basmaz(): void
     {
-        $b = self::oku('docker/rootfs/usr/local/bin/'.self::AD.'-entrypoint');
+        $b = self::read('docker/rootfs/usr/local/bin/'.self::AD.'-entrypoint');
 
         // Konteyner günlüğünü okuyan (docker logs, platformun günlük ekranı)
         // anahtarı ve ilk parolayı da okurdu; yalnız dosyanın yeri söylenir.
@@ -71,9 +71,9 @@ class ContainerLayoutTest extends TestCase
 
     public function test_compose_standart_duzende(): void
     {
-        $c = self::oku('docker-compose.yml');
+        $c = self::read('docker-compose.yml');
 
-        foreach (["\n  panel:\n", "\n  db:\n", "\n  redis:\n", 'image: mariadb:', 'replicas: ${VT_KOPYA:-1}', 'expose: ["80"]', 'internal: ${AG_YALITIMI:-false}'] as $var) {
+        foreach (["\n  panel:\n", "\n  db:\n", "\n  redis:\n", 'image: mariadb:', 'replicas: ${DB_REPLICAS:-1}', 'expose: ["80"]', 'internal: ${NETWORK_ISOLATED:-false}'] as $var) {
             $this->assertStringContainsString($var, $c, $var);
         }
         $this->assertStringNotContainsString('env_file', $c);
@@ -87,6 +87,6 @@ class ContainerLayoutTest extends TestCase
     public function test_chroma_imaji_ozetle_sabit(): void
     {
         // Hub'da sürüm etiketi yok; etiketle sabitlemek çekilemez, etiketsiz bırakmak her kurulumda başka bir latest.
-        $this->assertMatchesRegularExpression('/^\s+image: chromadb\/chroma@sha256:[0-9a-f]{64}$/m', self::oku('docker-compose.yml'));
+        $this->assertMatchesRegularExpression('/^\s+image: chromadb\/chroma@sha256:[0-9a-f]{64}$/m', self::read('docker-compose.yml'));
     }
 }

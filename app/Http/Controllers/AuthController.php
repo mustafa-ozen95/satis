@@ -24,13 +24,13 @@ class AuthController extends Controller
     public function showLogin(CenterClient $merkez): View|RedirectResponse
     {
         if (Auth::check()) {
-            return redirect()->route('teklif.create');
+            return redirect()->route('quote.create');
         }
 
         /* Görünüm kardeş panellerle BİREBİR AYNI dosya; beklediği iki değer bunlar. */
         return view('auth.login', [
-            'merkezAcik' => $merkez->acikMi(),
-            'merkezAd' => config('identity.ad'),
+            'merkezAcik' => $merkez->isEnabled(),
+            'merkezAd' => config('identity.name'),
         ]);
     }
 
@@ -47,7 +47,7 @@ class AuthController extends Controller
              * olmadığı da ayırt edilmez: ekranda tek bir mesaj var, kayıtta
              * iki farklı mesaj olması o ayrımı geri getirirdi.
              */
-            $kayit->kaydet('giris_basarisiz', "Başarısız giriş denemesi: {$credentials['email']}");
+            $kayit->log('giris_basarisiz', "Başarısız giriş denemesi: {$credentials['email']}");
 
             /*
              * HATA DOĞRULAMA HATASI OLARAK DÖNER — kardeş panellerdeki gibi.
@@ -61,16 +61,16 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        $kayit->kaydet('giris', "Panele giriş: {$user->email}", $user, $user);
+        $kayit->log('giris', "Panele giriş: {$user->email}", $user, $user);
 
-        return redirect()->route('teklif.create');
+        return redirect()->route('quote.create');
     }
 
     public function logout(Request $request, ActivityRecorder $kayit): RedirectResponse
     {
         /* Kayıt ÇIKIŞTAN ÖNCE: sonrasında kimin çıktığı belli olmaz. */
         if ($kullanici = $request->user()) {
-            $kayit->kaydet('cikis', "Panelden çıkış: {$kullanici->email}", $kullanici, $kullanici);
+            $kayit->log('cikis', "Panelden çıkış: {$kullanici->email}", $kullanici, $kullanici);
         }
 
         Auth::logout();
@@ -80,7 +80,7 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
-    public function yetkisiz(): View
+    public function unauthorized(): View
     {
         return view('auth.unauthorized');
     }

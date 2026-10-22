@@ -20,7 +20,7 @@ declare(strict_types=1);
 return [
 
     /* Teklif isteminde asistanın adına çalıştığı şirket. Boşsa ad geçmez. */
-    'ad' => env('SIRKET_ADI', ''),
+    'name' => env('COMPANY_NAME', ''),
 
     /*
      * Kurumsal sitenin kök adresi (ör. https://www.ornek.test).
@@ -30,27 +30,27 @@ return [
      * (alan adı, baştaki "www." atılarak). Etiket veritabanına yazılıyor:
      * adres değişirse eski kayıtlar artık "site kaydı" sayılmaz.
      */
-    'site' => env('SIRKET_SITESI', ''),
+    'website' => env('COMPANY_WEBSITE', ''),
 
     /*
      * Şirkete özgü TEKLİF İSTEMİ (düz metin, isteğe bağlı).
      *
-     * Varsa koddaki genel istemin YERİNE geçer; {fiyat_baglami},
-     * {bilgi_baglami}, {kosullar} ve {talep} yer tutucularının dördünü de
+     * Varsa koddaki genel istemin YERİNE geçer; {price_context},
+     * {knowledge_context}, {terms} ve {request} yer tutucularının dördünü de
      * taşımak zorunda, birisi eksikse dosya kullanılmaz ve günlüğe uyarı düşer.
      * Ortam değişkeni değil dosya: istem çok satırlı ve uzun, .env'de ve
      * platformların değişken ekranında tırnak/satır sonu sorunu çıkarırdı.
      */
-    'istem_dosyasi' => storage_path('app/company/quote-prompt.txt'),
+    'prompt_file' => storage_path('app/company/quote-prompt.txt'),
 
     /*
-     * bilgi:siteden turunun okuyacağı sayfalar (JSON, isteğe bağlı):
+     * knowledge:site turunun okuyacağı sayfalar (JSON, isteğe bağlı):
      *
      *     {"/hizmetler": {"baslik": "Hizmetler", "kategori": "Genel"}, ...}
      *
-     * Anahtar göreli yol (SIRKET_SITESI'ne eklenir) ya da tam adres olabilir.
+     * Anahtar göreli yol (COMPANY_WEBSITE'ne eklenir) ya da tam adres olabilir.
      * Dosya yoksa tur hiçbir şeye dokunmadan atlanır.
      */
-    'site_sayfalari_dosyasi' => storage_path('app/company/site-pages.json'),
+    'site_pages_file' => storage_path('app/company/site-pages.json'),
 
 ];

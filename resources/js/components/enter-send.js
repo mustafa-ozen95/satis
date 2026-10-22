@@ -15,31 +15,31 @@
  * henüz dönmemişse ikinci gönderim aynı mesajı iki kez yazdırırdı.
  */
 export function init() {
-    document.addEventListener('keydown', (olay) => {
-        if (olay.key !== 'Enter' || olay.shiftKey || olay.isComposing) {
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' || event.shiftKey || event.isComposing) {
             return;
         }
 
-        const kutu = olay.target.closest('textarea[data-enter-gonder]');
+        const box = event.target.closest('textarea[data-enter-send]');
 
-        if (!kutu || kutu.disabled) {
+        if (!box || box.disabled) {
             return;
         }
 
-        const form = kutu.form;
+        const form = box.form;
 
-        if (!form || form.dataset.gonderiliyor === 'evet') {
+        if (!form || form.dataset.submitting === 'yes') {
             return;
         }
 
-        olay.preventDefault();
+        event.preventDefault();
 
         /* Boş ya da yalnızca boşluk: gönderilmez, kutu da temizlenmez. */
-        if (kutu.value.trim() === '') {
+        if (box.value.trim() === '') {
             return;
         }
 
-        form.dataset.gonderiliyor = 'evet';
+        form.dataset.submitting = 'yes';
         form.requestSubmit();
     });
 }

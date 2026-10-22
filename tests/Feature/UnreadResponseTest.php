@@ -35,7 +35,7 @@ class UnreadResponseTest extends TestCase
     {
         $konusma = $this->konusma(User::factory()->admin()->create());
 
-        $this->assertTrue($konusma->okunmamisMi());
+        $this->assertTrue($konusma->isUnread());
     }
 
     /** ÜRETİLİYORKEN okunmamış değildir: orada beklenen bir yanıt yok. */
@@ -43,7 +43,7 @@ class UnreadResponseTest extends TestCase
     {
         $konusma = $this->konusma(User::factory()->admin()->create(), 'bekliyor');
 
-        $this->assertFalse($konusma->okunmamisMi());
+        $this->assertFalse($konusma->isUnread());
     }
 
     public function test_konusma_acilinca_okundu_isaretlenir(): void
@@ -51,9 +51,9 @@ class UnreadResponseTest extends TestCase
         $kullanici = User::factory()->admin()->create();
         $konusma = $this->konusma($kullanici);
 
-        $this->actingAs($kullanici)->get(route('teklif.show', $konusma))->assertOk();
+        $this->actingAs($kullanici)->get(route('quote.show', $konusma))->assertOk();
 
-        $this->assertFalse($konusma->fresh()->okunmamisMi());
+        $this->assertFalse($konusma->fresh()->isUnread());
     }
 
     /**
@@ -67,13 +67,13 @@ class UnreadResponseTest extends TestCase
         $kullanici = User::factory()->admin()->create();
         $konusma = $this->konusma($kullanici);
 
-        $this->actingAs($kullanici)->get(route('teklif.show', $konusma));
-        $this->assertFalse($konusma->fresh()->okunmamisMi());
+        $this->actingAs($kullanici)->get(route('quote.show', $konusma));
+        $this->assertFalse($konusma->fresh()->isUnread());
 
         $this->travel(5)->minutes();
         $konusma->messages()->create(['role' => 'assistant', 'content' => 'İkinci yanıt']);
 
-        $this->assertTrue($konusma->fresh()->okunmamisMi());
+        $this->assertTrue($konusma->fresh()->isUnread());
     }
 
     /** Ekranda üç hâl de kendi işaretiyle çizilir. */
@@ -84,11 +84,11 @@ class UnreadResponseTest extends TestCase
         $this->konusma($kullanici, 'bekliyor');
 
         $this->actingAs($kullanici)
-            ->get(route('teklif.create'))
+            ->get(route('quote.create'))
             ->assertOk()
             ->assertSee('Hazırlanıyor…')
             ->assertSee('Yeni yanıt')
-            ->assertSee('dot--calisiyor', false)
-            ->assertSee('teklif-baglanti--okunmamis', false);
+            ->assertSee('dot--running', false)
+            ->assertSee('quote-link--unread', false);
     }
 }

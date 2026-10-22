@@ -26,9 +26,9 @@ class ProductGenerationTest extends TestCase
 
     public function test_addaki_nesil_okunur(): void
     {
-        $this->assertSame(9, ProductGeneration::nesil('HP ProLiant DL160-Gen9 (6C/12T, 48GB RAM DDR4)'));
-        $this->assertSame(8, ProductGeneration::nesil('HP ProLiant DL320e-Gen8 v2 (4C/8T, 8GB RAM)'));
-        $this->assertSame(7, ProductGeneration::nesil('HP ProLiant ML110-G7 ATX (4C, 8GB RAM)'));
+        $this->assertSame(9, ProductGeneration::generation('HP ProLiant DL160-Gen9 (6C/12T, 48GB RAM DDR4)'));
+        $this->assertSame(8, ProductGeneration::generation('HP ProLiant DL320e-Gen8 v2 (4C/8T, 8GB RAM)'));
+        $this->assertSame(7, ProductGeneration::generation('HP ProLiant ML110-G7 ATX (4C, 8GB RAM)'));
     }
 
     /**
@@ -39,9 +39,9 @@ class ProductGenerationTest extends TestCase
      */
     public function test_nesil_olmayan_ad_bos_doner(): void
     {
-        $this->assertNull(ProductGeneration::nesil('IP Tahsis /29 (8 adet)'));
-        $this->assertNull(ProductGeneration::nesil('Sunucu 8GB RAM 1Gbps 250GB SATA'));
-        $this->assertNull(ProductGeneration::nesil(null));
+        $this->assertNull(ProductGeneration::generation('IP Tahsis /29 (8 adet)'));
+        $this->assertNull(ProductGeneration::generation('Sunucu 8GB RAM 1Gbps 250GB SATA'));
+        $this->assertNull(ProductGeneration::generation(null));
     }
 
     /** Fiyat listesinde EN YENİ NESİL işaretlenir. */
@@ -104,7 +104,7 @@ class ProductGenerationTest extends TestCase
         $kb = Mockery::mock(KnowledgeBaseService::class);
         $kb->shouldReceive('query')->once()->andReturn([]);
 
-        (new QuoteService($llm, $kb))->generateTeklif($talep);
+        (new QuoteService($llm, $kb))->generateQuote($talep);
 
         return $yakalanan;
     }

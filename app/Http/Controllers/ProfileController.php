@@ -19,7 +19,7 @@ use Illuminate\View\View;
  * oturumdan geliyor — kişi yalnızca kendi hesabına dokunabiliyor, başkasının
  * kaydını göstermenin bir yolu yok. Rol ve gerçek yetkiler (perm_*) burada DEĞİŞTİRİLEMEZ - kullanıcı
  * yalnızca ne istediğini işaretleyip admin onayına gönderebilir
- * (bkz. PermissionRequest, admin/kullanicilar sayfasında onaylanır/reddedilir).
+ * (bkz. PermissionRequest, admin/users sayfasında onaylanır/reddedilir).
  */
 class ProfileController extends Controller
 {
@@ -33,12 +33,12 @@ class ProfileController extends Controller
 
         return view('profile.index', [
             'bekleyenTalep' => $bekleyenTalep,
-            'buFormAd' => FormStatus::mi('ad'),
-            'buFormSifre' => FormStatus::mi('sifre'),
+            'buFormAd' => FormStatus::matches('ad'),
+            'buFormSifre' => FormStatus::matches('sifre'),
         ]);
     }
 
-    public function adGuncelle(NameRequest $request): RedirectResponse
+    public function updateName(NameRequest $request): RedirectResponse
     {
         $user = $request->user();
 
@@ -46,10 +46,10 @@ class ProfileController extends Controller
 
         $user->update(['name' => $validated['ad']]);
 
-        return redirect()->route('profil.show')->with('status', 'Adınız güncellendi.');
+        return redirect()->route('profile.show')->with('status', 'Adınız güncellendi.');
     }
 
-    public function sifreGuncelle(PasswordRequest $request): RedirectResponse
+    public function updatePassword(PasswordRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -57,15 +57,15 @@ class ProfileController extends Controller
             'password' => Hash::make($validated['yeni_sifre']),
         ]);
 
-        return redirect()->route('profil.show')->with('status', 'Parolanız güncellendi.');
+        return redirect()->route('profile.show')->with('status', 'Parolanız güncellendi.');
     }
 
-    public function yetkiTalebiGonder(Request $request): RedirectResponse
+    public function submitPermissionRequest(Request $request): RedirectResponse
     {
         $user = $request->user();
 
         if ($user->permissionRequests()->where('durum', 'bekliyor')->exists()) {
-            return redirect()->route('profil.show')
+            return redirect()->route('profile.show')
                 ->with('error', 'Zaten onay bekleyen bir yetki talebiniz var.');
         }
 
@@ -76,6 +76,6 @@ class ProfileController extends Controller
             'perm_fiyat' => $request->boolean('perm_fiyat'),
         ]);
 
-        return redirect()->route('profil.show')->with('status', 'Yetki talebiniz yöneticinize gönderildi.');
+        return redirect()->route('profile.show')->with('status', 'Yetki talebiniz yöneticinize gönderildi.');
     }
 }

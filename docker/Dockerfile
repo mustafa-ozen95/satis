@@ -19,7 +19,7 @@ ARG PHP_VERSION=8.5
 # -----------------------------------------------------------------------------
 #  1. Arayüz varlıkları
 # -----------------------------------------------------------------------------
-FROM node:22-bookworm-slim AS varliklar
+FROM node:22-bookworm-slim AS assets
 
 WORKDIR /uygulama
 
@@ -37,7 +37,7 @@ RUN npm run build
 # -----------------------------------------------------------------------------
 #  2. PHP tabanı — hem bağımlılık çözümü hem çalışma zamanı bunu paylaşır
 # -----------------------------------------------------------------------------
-FROM debian:bookworm-slim AS php-taban
+FROM debian:bookworm-slim AS php-base
 
 ARG PHP_VERSION
 # Güvenlik sürümü çıkınca artır: değeri değişen katman önbellekten gelmez, Debian ve PHP
@@ -82,7 +82,7 @@ RUN update-alternatives --set php /usr/bin/php${PHP_VERSION}
 # -----------------------------------------------------------------------------
 #  3. PHP bağımlılıkları
 # -----------------------------------------------------------------------------
-FROM php-taban AS saticilar
+FROM php-base AS vendors
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -99,7 +99,7 @@ RUN composer dump-autoload --no-dev --optimize --classmap-authoritative
 # -----------------------------------------------------------------------------
 #  4. Çalışma zamanı
 # -----------------------------------------------------------------------------
-FROM php-taban AS calisma
+FROM php-base AS runtime
 
 ARG PHP_VERSION
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -127,8 +127,8 @@ RUN useradd --system --create-home --home-dir /uygulama --shell /usr/sbin/nologi
 WORKDIR /uygulama
 
 COPY --chown=satis:satis . .
-COPY --from=saticilar --chown=satis:satis /uygulama/vendor ./vendor
-COPY --from=varliklar --chown=satis:satis /uygulama/public/build ./public/build
+COPY --from=vendors --chown=satis:satis /uygulama/vendor ./vendor
+COPY --from=assets --chown=satis:satis /uygulama/public/build ./public/build
 
 # Yapılandırmalar ve başlatıcı
 COPY docker/rootfs/ /
@@ -155,12 +155,12 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
 
 # Hangi commit'ten derlendiği: panel kendi sürümünü buradan bilir (Ayarlar →
 # Güncelleme). Son katmanda: değeri her derlemede değişir, önbelleği bozmasın.
-ARG SURUM=""
-ENV UYGULAMA_SURUMU=${SURUM}
-# SURUM verilmezse (NineDeploy gibi platformlar derlemeye commit vermez)
-# bağlamdaki .git'ten okunur ve /uygulama/SURUM'a yazılır; config önce
+ARG APP_VERSION=""
+ENV APP_VERSION=${APP_VERSION}
+# APP_VERSION verilmezse (NineDeploy gibi platformlar derlemeye commit vermez)
+# bağlamdaki .git'ten okunur ve /uygulama/VERSION'a yazılır; config önce
 # ortama, sonra bu dosyaya bakar. .git yoksa (zip) dosya boş kalır.
-RUN --mount=type=bind,target=/tmp/baglam sh /tmp/baglam/docker/version-read.sh > /uygulama/SURUM
+RUN --mount=type=bind,target=/tmp/context sh /tmp/context/docker/version-read.sh > /uygulama/VERSION
 
 ENTRYPOINT ["/usr/local/bin/sales-entrypoint"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

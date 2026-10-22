@@ -16,7 +16,7 @@ return [
      * Giriş anahtarı E-POSTA (kardeş panellerle aynı); ad yalnızca ekranda
      * görünür. PANEL_USERNAME yalnız geriye uyum için okunur.
      */
-    'ad' => env('PANEL_AD', 'Sistem Yöneticisi'),
+    'name' => env('PANEL_NAME', 'Sistem Yöneticisi'),
     'email' => env('PANEL_EMAIL', env('PANEL_USERNAME')),
 
     /*
@@ -38,6 +38,6 @@ return [
     | yere ayrı yazılsaydı biri değişince diğeri sessizce eski kalırdı.
     |
     */
-    'parola_uzunluk' => (int) env('PANEL_PAROLA_UZUNLUK', 8),
+    'password_length' => (int) env('PANEL_PASSWORD_LENGTH', 8),
 
 ];

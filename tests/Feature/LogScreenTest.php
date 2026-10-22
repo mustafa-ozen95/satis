@@ -24,10 +24,10 @@ class LogScreenTest extends TestCase
     public function test_yonetici_denetim_kayitlarini_gorur(): void
     {
         $yonetici = User::factory()->admin()->create();
-        app(ActivityRecorder::class)->kaydet('deneme', 'Görünmesi gereken satır', null, $yonetici);
+        app(ActivityRecorder::class)->log('deneme', 'Görünmesi gereken satır', null, $yonetici);
 
         $this->actingAs($yonetici)
-            ->get(route('admin.kayitlar.denetim'))
+            ->get(route('admin.logs.audit'))
             ->assertOk()
             ->assertSee('Görünmesi gereken satır')
             ->assertSee('Denetim kayıtları');
@@ -36,22 +36,22 @@ class LogScreenTest extends TestCase
     public function test_yonetici_olmayan_goremez(): void
     {
         $this->actingAs(User::factory()->create())
-            ->get(route('admin.kayitlar.denetim'))
-            ->assertRedirect(route('yetkisiz'));
+            ->get(route('admin.logs.audit'))
+            ->assertRedirect(route('unauthorized'));
     }
 
     public function test_zincir_ekrandan_dogrulanabilir(): void
     {
         $yonetici = User::factory()->admin()->create();
-        app(ActivityRecorder::class)->kaydet('deneme', 'bir', null, $yonetici);
+        app(ActivityRecorder::class)->log('deneme', 'bir', null, $yonetici);
 
         $this->actingAs($yonetici)
-            ->post(route('admin.kayitlar.dogrula'))
-            ->assertRedirect(route('admin.kayitlar.denetim'))
+            ->post(route('admin.logs.verify'))
+            ->assertRedirect(route('admin.logs.audit'))
             ->assertSessionHas('status');
 
         /* Rozet artık son doğrulamayı okuyabiliyor. */
-        $this->get(route('admin.kayitlar.denetim'))
+        $this->get(route('admin.logs.audit'))
             ->assertOk()
             ->assertSee('Kayıt bütünlüğü doğrulandı');
     }
@@ -60,16 +60,16 @@ class LogScreenTest extends TestCase
     {
         $yonetici = User::factory()->admin()->create();
         $kayit = app(ActivityRecorder::class);
-        $kayit->kaydet('deneme', 'bir', null, $yonetici);
-        $hedef = $kayit->kaydet('deneme', 'iki', null, $yonetici);
+        $kayit->log('deneme', 'bir', null, $yonetici);
+        $hedef = $kayit->log('deneme', 'iki', null, $yonetici);
 
         ActivityLog::query()->whereKey($hedef->getKey())->update(['aciklama' => 'kurcalandı']);
 
         $this->actingAs($yonetici)
-            ->post(route('admin.kayitlar.dogrula'))
+            ->post(route('admin.logs.verify'))
             ->assertSessionHas('error');
 
-        $this->get(route('admin.kayitlar.denetim'))
+        $this->get(route('admin.logs.audit'))
             ->assertOk()
             ->assertSee('KAYIT DEĞİŞTİRİLMİŞ');
     }
@@ -80,7 +80,7 @@ class LogScreenTest extends TestCase
         app(ErrorLogger::class)->record(new RuntimeException('Dış servis yanıt vermedi'));
 
         $this->actingAs($yonetici)
-            ->get(route('admin.kayitlar.hatalar'))
+            ->get(route('admin.logs.errors'))
             ->assertOk()
             ->assertSee('Dış servis yanıt vermedi');
     }

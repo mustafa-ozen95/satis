@@ -28,11 +28,11 @@ class RoleFromCenterTest extends TestCase
         parent::setUp();
 
         config([
-            'identity.acik' => true,
-            'identity.yapilandirildi' => true,
-            'identity.adres' => 'https://merkez.test',
-            'identity.istemci' => 'istemci',
-            'identity.sir' => 'sir',
+            'identity.enabled' => true,
+            'identity.configured' => true,
+            'identity.url' => 'https://merkez.test',
+            'identity.client_id' => 'istemci',
+            'identity.client_secret' => 'sir',
         ]);
 
         Cache::flush();
@@ -42,7 +42,7 @@ class RoleFromCenterTest extends TestCase
     {
         $this->assertSame(
             ['admin', 'muhasebe', 'teknik', 'network'],
-            Role::sirali()->pluck('slug')->all(),
+            Role::ordered()->pluck('slug')->all(),
         );
     }
 
@@ -57,11 +57,11 @@ class RoleFromCenterTest extends TestCase
             'email' => $kullanici->email,
         ]);
 
-        Http::fake(['merkez.test/api/kimlik-durumu' => Http::response([
-            'kimlikler' => ['kimlik-1' => ['durum' => 'etkin', 'girebilir' => true, 'rol' => 'muhasebe']],
+        Http::fake(['merkez.test/api/identity-status' => Http::response([
+            'identities' => ['kimlik-1' => ['status' => 'etkin', 'can_enter' => true, 'role' => 'muhasebe']],
         ])]);
 
-        $this->artisan('kimlik:esitle')->assertSuccessful();
+        $this->artisan('identity:sync')->assertSuccessful();
 
         $this->assertSame('muhasebe', $kullanici->fresh()->rol?->slug);
     }
@@ -81,11 +81,11 @@ class RoleFromCenterTest extends TestCase
             'email' => $kullanici->email,
         ]);
 
-        Http::fake(['merkez.test/api/kimlik-durumu' => Http::response([
-            'kimlikler' => ['kimlik-1' => ['durum' => 'etkin', 'girebilir' => true, 'rol' => 'admin']],
+        Http::fake(['merkez.test/api/identity-status' => Http::response([
+            'identities' => ['kimlik-1' => ['status' => 'etkin', 'can_enter' => true, 'role' => 'admin']],
         ])]);
 
-        $this->artisan('kimlik:esitle')->assertSuccessful();
+        $this->artisan('identity:sync')->assertSuccessful();
 
         $this->assertSame('muhasebe', $kullanici->fresh()->rol?->slug);
         $this->assertFalse($kullanici->fresh()->isAdmin());
@@ -102,11 +102,11 @@ class RoleFromCenterTest extends TestCase
             'email' => $kullanici->email,
         ]);
 
-        Http::fake(['merkez.test/api/kimlik-durumu' => Http::response([
-            'kimlikler' => ['kimlik-1' => ['durum' => 'etkin', 'girebilir' => true, 'rol' => 'bilinmeyen']],
+        Http::fake(['merkez.test/api/identity-status' => Http::response([
+            'identities' => ['kimlik-1' => ['status' => 'etkin', 'can_enter' => true, 'role' => 'bilinmeyen']],
         ])]);
 
-        $this->artisan('kimlik:esitle')->assertSuccessful();
+        $this->artisan('identity:sync')->assertSuccessful();
 
         $this->assertSame('muhasebe', $kullanici->fresh()->rol?->slug);
     }
@@ -121,7 +121,7 @@ class RoleFromCenterTest extends TestCase
         User::factory()->rol('muhasebe')->create(['name' => 'Muhasebeci Kişi']);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->get(route('admin.kullanicilar.index'))
+            ->get(route('admin.users.index'))
             ->assertOk()
             ->assertSee('Muhasebe');
     }

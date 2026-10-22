@@ -22,9 +22,9 @@ class TopBar
 
         $bolumler = array_values(array_filter([
             [
-                'url' => route('teklif.create'),
+                'url' => route('quote.create'),
                 'label' => 'Teklifler',
-                'active' => request()->routeIs('teklif.*'),
+                'active' => request()->routeIs('quote.*'),
             ],
             /*
              * KAYNAKLAR: bilgi bankası ve fiyat listesi tek girdide, iki sekmede.
@@ -32,27 +32,27 @@ class TopBar
              * şerit telefonda sığmıyordu.
              */
             [
-                'url' => route('bilgi-bankasi.index'),
+                'url' => route('knowledge-base.index'),
                 'label' => 'Kaynaklar',
-                'active' => request()->routeIs('bilgi-bankasi.*', 'fiyatlar.*'),
+                'active' => request()->routeIs('knowledge-base.*', 'prices.*'),
             ],
 
             $kullanici?->isAdmin() ? [
-                'url' => route('admin.kullanicilar.index'),
+                'url' => route('admin.users.index'),
                 'label' => 'Kullanıcılar',
-                'active' => request()->routeIs('admin.kullanicilar.*'),
+                'active' => request()->routeIs('admin.users.*'),
             ] : null,
             $kullanici?->isAdmin() ? [
-                'url' => route('admin.kayitlar.denetim'),
+                'url' => route('admin.logs.audit'),
                 'label' => 'Kayıtlar',
                 /* İstatistikler de bu ailenin sekmesi (bkz. components/logs/tabs). */
-                'active' => request()->routeIs('admin.kayitlar.*', 'admin.istatistikler.*'),
+                'active' => request()->routeIs('admin.logs.*', 'admin.statistics.*'),
             ] : null,
             $kullanici?->isAdmin() ? [
-                'url' => route('admin.ayarlar.index'),
+                'url' => route('admin.settings.index'),
                 'label' => 'Ayarlar',
                 /* API jetonları Ayarlar'ın sekmesi; şeritte ayrı girdisi yok. */
-                'active' => request()->routeIs('admin.ayarlar.*', 'admin.api-jetonlari.*'),
+                'active' => request()->routeIs('admin.settings.*', 'admin.api-tokens.*'),
             ] : null,
         ]));
 

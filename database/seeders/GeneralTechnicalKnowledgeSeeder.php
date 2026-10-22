@@ -16,7 +16,7 @@ use Illuminate\Database\Seeder;
  * cümleler kasıtlı olarak yok; yalnızca sektörün ortak tanım ve
  * terminolojisi var. Şirkete özgü kural/istisna/fiyat bilgisi
  * KnowledgeBaseSeeder'da (kaynak: ilk-kurulum) ve sitedeki gerçek
- * içerik `bilgi:siteden` ile (kaynak: sitenin alan adı) ayrı duruyor.
+ * içerik `knowledge:site` ile (kaynak: sitenin alan adı) ayrı duruyor.
  *
  * NEDEN AYRI KAYNAK ETİKETİ (egitim-genel): `KnowledgeSiteCommand`,
  * kaynak alanı sitenin alan adı olan kayıtları site taramasıyla

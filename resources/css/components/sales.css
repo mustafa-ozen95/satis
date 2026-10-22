@@ -7,7 +7,7 @@
  */
 
 /* Tablolarda satırın ana başlığı (fiyat kalemi adı, teklif başlığı…). */
-.satir-baslik {
+.row-title {
     font-size: var(--text-md);
     font-weight: var(--weight-semibold);
     letter-spacing: normal;
@@ -17,19 +17,19 @@
 }
 
 /* Tek satırlık kod/kimlik gösterimi. */
-.kod {
+.code {
     font-family: var(--font-mono);
     font-size: var(--text-sm);
     color: var(--color-text-muted);
 }
 
-.kod--kir {
+.code--wrap {
     word-break: break-all;
     white-space: normal;
 }
 
 /* x-icon bileşeninin çizdiği simgeler. */
-.ikon {
+.icon-svg {
     width: 1em;
     height: 1em;
 }
@@ -101,7 +101,7 @@
  * Kenarlık yok, zemin hücreninkinden bir ton açık — düzenlemede olduğu
  * belli olmalı ama tablo dağılmamalı.
  */
-.input--hucre {
+.input--cell {
     width: 100%;
     min-width: 0;
     height: auto;
@@ -119,18 +119,18 @@
  * bir tık yükselir; yakınlaştırılmış bir tabloda kaybolmaktan iyidir.
  */
 @media (max-width: 720px), (pointer: coarse) {
-    .input--hucre {
+    .input--cell {
         font-size: max(1rem, 1em);
     }
 }
 
-.hucre--duzenleniyor {
+.cell--editing {
     padding-block: 2px;
     background: var(--color-selected);
 }
 
 /* Kaydedilirken: tıklanabilir görünmesin, ama yerinde kalsın. */
-.hucre--bekliyor {
+.cell--pending {
     opacity: 0.6;
     pointer-events: none;
 }
@@ -140,6 +140,6 @@
  *
  * `cursor: cell` kullanılmaz: o imleç kalın bir ARTI işareti çizer ve tablo
  * üzerinde gezinirken hücre seçiliyormuş gibi durur. Düzenlenebilirliği
- * hücrenin kendi ipucu (title) söylüyor; imleç olduğu gibi kalıyor.
+ * hücrenin kendi tip (title) söylüyor; imleç olduğu gibi kalıyor.
  */
 

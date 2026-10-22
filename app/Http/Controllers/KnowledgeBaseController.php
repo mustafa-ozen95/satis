@@ -27,8 +27,8 @@ class KnowledgeBaseController extends Controller
 
         return view('knowledge-base.index', [
             'kayitlar' => $kayitlar,
-            'duzenleAcik' => FormStatus::duzenleHaritasi(collect($kayitlar)->pluck('id')),
-            'buFormEkle' => FormStatus::ekle(),
+            'duzenleAcik' => FormStatus::editMap(collect($kayitlar)->pluck('id')),
+            'buFormEkle' => FormStatus::isAdd(),
 
             /*
              * Kategori SEÇİLİR. Liste var olan kayıtlardan geliyor; ayrı bir
@@ -57,9 +57,9 @@ class KnowledgeBaseController extends Controller
             source: 'panel-manuel',
         );
 
-        app(ActivityRecorder::class)->kaydet('bilgi_ekle', 'Bilgi bankasına kayıt eklendi');
+        app(ActivityRecorder::class)->log('bilgi_ekle', 'Bilgi bankasına kayıt eklendi');
 
-        return redirect()->route('bilgi-bankasi.index')->with('status', 'Bilgi eklendi.');
+        return redirect()->route('knowledge-base.index')->with('status', 'Bilgi eklendi.');
     }
 
     public function update(KnowledgeRequest $request, int $entry): RedirectResponse
@@ -73,12 +73,12 @@ class KnowledgeBaseController extends Controller
             category: $validated['kategori'],
         );
 
-        app(ActivityRecorder::class)->kaydet(
+        app(ActivityRecorder::class)->log(
             'bilgi_guncelle',
             "Bilgi bankası kaydı güncellendi: {$validated['kategori']} · {$validated['baslik']}",
         );
 
-        return redirect()->route('bilgi-bankasi.index')->with('status', 'Bilgi güncellendi.');
+        return redirect()->route('knowledge-base.index')->with('status', 'Bilgi güncellendi.');
     }
 
     public function destroy(int $entry): RedirectResponse
@@ -91,8 +91,8 @@ class KnowledgeBaseController extends Controller
          * Kaydın kendisi Chroma'da ve silindi; burada kalan tek iz bu satır.
          * Kimliği yazılır ki hangi kaydın gittiği belli olsun.
          */
-        app(ActivityRecorder::class)->kaydet('bilgi_sil', "Bilgi bankası kaydı silindi: {$entry}");
+        app(ActivityRecorder::class)->log('bilgi_sil', "Bilgi bankası kaydı silindi: {$entry}");
 
-        return redirect()->route('bilgi-bankasi.index')->with('status', 'Bilgi silindi.');
+        return redirect()->route('knowledge-base.index')->with('status', 'Bilgi silindi.');
     }
 }

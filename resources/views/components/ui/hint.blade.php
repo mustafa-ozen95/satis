@@ -10,7 +10,7 @@
     soran kişi cevabı bir tık ötede bulsun. Burada anlatılan şey kaydın
     türüne göre değişiyor; metni çağıran yer verir.
 --}}
-<details class="ipucu">
-    <summary class="ipucu__isaret" title="{{ $baslik }}" aria-label="{{ $baslik }}">?</summary>
-    <div class="ipucu__govde">{{ $slot }}</div>
+<details class="tip">
+    <summary class="tip__mark" title="{{ $baslik }}" aria-label="{{ $baslik }}">?</summary>
+    <div class="tip__body">{{ $slot }}</div>
 </details>

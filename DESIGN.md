@@ -45,7 +45,7 @@ Giriş ekranı bütün panellerde aynı dosyadır; panelin kimliği **config'ten
 
 ```php
 config('app.name')      // KYM · EYS · NYS · SYS · SYD
-config('app.aciklama')  // "Erişim Yönetim Sistemi", "Switch Yedek Deposu"…
+config('app.description')  // "Erişim Yönetim Sistemi", "Switch Yedek Deposu"…
 ```
 
 Bir metni doğrudan şablona yazmak, o dosyayı diğerlerinden ayırır. Panele
@@ -60,7 +60,7 @@ Bir ekran yazarken ihtiyacınız olan sınıf zaten vardır:
 | Sayfa başlığı | `.page-head`, `.page-head__text`, `.page-head__subtitle`, `.page-head__actions` |
 | Kart/kutu | `.panel`, `.panel__head`, `.panel__title`, `.panel__body` |
 | Tablo | `.table` (+ hücrelerde `data-label`), `.table-wrap`, `.table__cell--mono` |
-| Satırın adı | `.satir-baslik` |
+| Satırın adı | `.row-title` |
 | Sayı özeti | `.figures`, `.figure`, `.figure__value`, `.figure__label` |
 | Boş liste | `<x-ui.empty title="…" text="…" />` |
 | Uyarı | `.alert alert--danger|warning|info|success` |

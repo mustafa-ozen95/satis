@@ -11,7 +11,7 @@
 # =============================================================================
 set -euo pipefail
 
-UYGULAMA=/uygulama
+APP_ROOT=/uygulama
 PHP=/usr/bin/php
 
 bilgi() { printf '\033[1;34m[satis]\033[0m %s\n' "$*"; }
@@ -27,7 +27,7 @@ chown satis:satis /run/php
 # Çalışma yolları İngilizce adlara geçti: eski hacimdeki adlar açılışta taşınır
 # (dizinler OLUŞTURULMADAN önce; yeni ad varsa dokunulmaz, uyarı yazılır;
 # bkz. dc-paths).
-/usr/local/bin/dc-paths "${UYGULAMA}/storage/app" \
+/usr/local/bin/dc-paths "${APP_ROOT}/storage/app" \
     veritabani=database \
     database/baglanti.json=database/connection.json \
     database/durum.json=database/state.json \
@@ -40,10 +40,10 @@ chown satis:satis /run/php
 
 # storage/app/company: şirkete özgü teklif istemi ve site sayfaları (bkz.
 # config/company.php); dosyayı koyan dizini hazır bulsun.
-mkdir -p "${UYGULAMA}"/storage/{app/company,logs} \
-         "${UYGULAMA}"/storage/framework/{cache/data,sessions,views} \
-         "${UYGULAMA}"/bootstrap/cache
-chown -R satis:satis "${UYGULAMA}"/storage "${UYGULAMA}"/bootstrap/cache
+mkdir -p "${APP_ROOT}"/storage/{app/company,logs} \
+         "${APP_ROOT}"/storage/framework/{cache/data,sessions,views} \
+         "${APP_ROOT}"/bootstrap/cache
+chown -R satis:satis "${APP_ROOT}"/storage "${APP_ROOT}"/bootstrap/cache
 
 
 # Sertifika sekmesinin istek dizini: panel istek.json bırakır, sunucudaki ajan
@@ -109,7 +109,7 @@ fi
 : "${CHROMA_URL:=http://chroma:8000}"
 
 export APP_NAME APP_ENV APP_DEBUG APP_LOCALE APP_FALLBACK_LOCALE APP_TIMEZONE \
-       APP_URL LOG_CHANNEL TEMA_ALANI DENETIM_ANAHTARI \
+       APP_URL LOG_CHANNEL THEME_COOKIE_DOMAIN AUDIT_KEY \
        DB_CONNECTION DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD DB_TIMEZONE \
        CACHE_STORE SESSION_DRIVER QUEUE_CONNECTION FILESYSTEM_DISK \
        REDIS_CLIENT REDIS_HOST REDIS_PORT REDIS_PASSWORD \
@@ -123,7 +123,7 @@ export APP_NAME APP_ENV APP_DEBUG APP_LOCALE APP_FALLBACK_LOCALE APP_TIMEZONE \
 #  ilerideki şifreli sütunlar ise okunamaz hâle gelirdi.
 #
 #  Anahtar HACİMDE saklanır.
-ANAHTAR_DOSYASI="${UYGULAMA}/storage/app/app-key.txt"
+ANAHTAR_DOSYASI="${APP_ROOT}/storage/app/app-key.txt"
 
 if [[ -z "${APP_KEY:-}" ]]; then
     if [[ -s "${ANAHTAR_DOSYASI}" ]]; then
@@ -166,13 +166,13 @@ fi
 #  karşılaştırır ve uzak veritabanıyla devam eder. Bir adım tutmazsa taşıma
 #  "basarisiz" yazılır ve panel ortamın veritabanıyla açılır. Kaynağa
 #  yazılmaz: taşıma anındaki hâliyle durur.
-VT_DIZIN="${UYGULAMA}/storage/app/database"
+VT_DIZIN="${APP_ROOT}/storage/app/database"
 VT_ASAMA=""
 VT_NEDEN=""
 VT_OZET=""
 declare -A VT_BAG=()
 
-vt() { gosu satis env UYGULAMA="${UYGULAMA}" "${PHP}" /usr/local/bin/dc-database "$@"; }
+vt() { gosu satis env APP_ROOT="${APP_ROOT}" "${PHP}" /usr/local/bin/dc-database "$@"; }
 
 # Veritabanı bağlantıyı kabul edene kadar bekler (en çok ~3 dk). Seçenek
 # dosyası ilk argüman: parola komut satırına girmez.
@@ -358,7 +358,7 @@ rm -f "${VT_BEKLE_CNF}"
 #  Önceki açılışın yapılandırma önbelleği SİLİNİR: konteyner yeniden
 #  başladığında bootstrap/cache yerinde kalıyor ve Laravel ortamı değil onu
 #  okuyor. Veritabanı taşımasından sonra göçler eski bağlantıya koşardı.
-rm -f "${UYGULAMA}/bootstrap/cache/config.php"
+rm -f "${APP_ROOT}/bootstrap/cache/config.php"
 
 bilgi "Göçler çalıştırılıyor..."
 if [[ "${VT_ASAMA}" == "deneniyor" ]]; then
@@ -391,14 +391,14 @@ if [[ "$(gosu satis "${PHP}" artisan tinker --execute='echo App\Models\User::que
     fi
 
     : "${PANEL_EMAIL:=}"
-    : "${PANEL_AD:=Sistem Yöneticisi}"
-    export PANEL_EMAIL PANEL_AD
+    : "${PANEL_NAME:=Sistem Yöneticisi}"
+    export PANEL_EMAIL PANEL_NAME
 
     bilgi "İlk yönetici oluşturuluyor: ${PANEL_EMAIL:-(adres verilmedi, hesap açılmayacak)}"
     gosu satis "${PHP}" artisan db:seed --force --class=Database\\Seeders\\DatabaseSeeder
 
     if [[ "${URETILDI}" == "1" ]]; then
-        ILK_PAROLA="${UYGULAMA}/storage/app/initial-password.txt"
+        ILK_PAROLA="${APP_ROOT}/storage/app/initial-password.txt"
         printf '%s\n%s\n' "${PANEL_EMAIL}" "${PANEL_PASSWORD}" > "${ILK_PAROLA}"
         chmod 0600 "${ILK_PAROLA}"
         chown satis:satis "${ILK_PAROLA}"

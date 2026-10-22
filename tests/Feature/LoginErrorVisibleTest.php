@@ -23,13 +23,13 @@ class LoginErrorVisibleTest extends TestCase
     {
         $kullanici = User::factory()->create();
 
-        $this->actingAs($kullanici)->get(route('teklif.create'))->assertOk();
+        $this->actingAs($kullanici)->get(route('quote.create'))->assertOk();
 
         $kullanici->forceFill(['aktif' => false])->save();
 
         /* Gerçek akış: ara katman dışarı atıyor, giriş ekranı sebebi yazıyor. */
         $this->followingRedirects()
-            ->get(route('teklif.create'))
+            ->get(route('quote.create'))
             ->assertOk()
             ->assertSee('Hesabınız etkin değil', false);
     }

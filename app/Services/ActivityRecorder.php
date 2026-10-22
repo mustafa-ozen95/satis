@@ -31,7 +31,7 @@ class ActivityRecorder
     /**
      * @param  string  $tur  olayın kısa adı; istatistik ekranı buna bakıyor
      */
-    public function kaydet(
+    public function log(
         string $tur,
         ?string $aciklama = null,
         ?Model $konu = null,
@@ -55,7 +55,7 @@ class ActivityRecorder
         ];
 
         try {
-            return $this->zincir->ekle($alanlar);
+            return $this->zincir->append($alanlar);
         } catch (\Throwable $e) {
             report($e);
 

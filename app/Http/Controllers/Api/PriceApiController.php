@@ -39,7 +39,7 @@ class PriceApiController extends Controller implements HasMiddleware
         $ara = trim((string) $request->query('ara', ''));
 
         $sorgu = PriceItem::query()
-            ->aktif()
+            ->active()
             ->when($kategori !== '', fn ($s) => $s->where('category', $kategori))
             ->when($ara !== '', fn ($s) => $s->where(fn ($i) => $i
                 ->where('name', 'like', "%{$ara}%")
@@ -51,8 +51,8 @@ class PriceApiController extends Controller implements HasMiddleware
         return PriceApiResource::collection($sorgu->paginate(self::SAYFA)->withQueryString());
     }
 
-    public function show(PriceItem $fiyat): PriceApiResource
+    public function show(PriceItem $price): PriceApiResource
     {
-        return new PriceApiResource($fiyat);
+        return new PriceApiResource($price);
     }
 }

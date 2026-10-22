@@ -26,11 +26,11 @@ class MatchByEmailTest extends TestCase
         parent::setUp();
 
         config([
-            'identity.acik' => true,
-            'identity.yapilandirildi' => true,
-            'identity.adres' => 'https://merkez.test',
-            'identity.istemci' => 'istemci',
-            'identity.sir' => 'sir',
+            'identity.enabled' => true,
+            'identity.configured' => true,
+            'identity.url' => 'https://merkez.test',
+            'identity.client_id' => 'istemci',
+            'identity.client_secret' => 'sir',
         ]);
 
         Cache::flush();
@@ -40,12 +40,12 @@ class MatchByEmailTest extends TestCase
     {
         $yonetici = User::factory()->admin()->create();
 
-        $this->actingAs($yonetici)->post(route('admin.kullanicilar.store'), [
+        $this->actingAs($yonetici)->post(route('admin.users.store'), [
             'ad' => 'Deniz Örnek',
             'sifre' => 'yeterince-uzun',
             'rol' => 'teknik',
             'eposta' => 'deniz@ornek.test',
-        ])->assertRedirect(route('admin.kullanicilar.index'));
+        ])->assertRedirect(route('admin.users.index'));
 
         $this->assertDatabaseHas('users', ['name' => 'Deniz Örnek', 'email' => 'deniz@ornek.test']);
     }
@@ -59,7 +59,7 @@ class MatchByEmailTest extends TestCase
          * Eşleştirici "tam olarak bir karşılık" arıyor; iki hesap aynı adresi
          * taşırsa merkezden gelen kimse giremezdi.
          */
-        $this->actingAs($yonetici)->post(route('admin.kullanicilar.store'), [
+        $this->actingAs($yonetici)->post(route('admin.users.store'), [
             'ad' => 'İkinci Kişi',
             'sifre' => 'yeterince-uzun',
             'rol' => 'teknik',
@@ -73,18 +73,18 @@ class MatchByEmailTest extends TestCase
 
         Http::fake([
             'merkez.test/oauth/token' => Http::response(['access_token' => 'jeton']),
-            'merkez.test/oauth/kullanici' => Http::response([
+            'merkez.test/oauth/userinfo' => Http::response([
                 'sub' => 'kimlik-1',
                 'name' => 'Yönetici',
                 'email' => 'admin@ornek.test',
                 'email_verified' => true,
-                'rol' => 'admin',
+                'role' => 'admin',
             ]),
         ]);
 
         $this->withSession(['kimlik_durum' => 'durum', 'kimlik_dogrulayici' => 'dogrulayici'])
-            ->get('/giris/merkez/geri?state=durum&code=kod')
-            ->assertRedirect(route('teklif.create'));
+            ->get('/login/center/callback?state=durum&code=kod')
+            ->assertRedirect(route('quote.create'));
 
         $this->assertAuthenticatedAs($kullanici);
         $this->assertDatabaseHas('user_identities', ['subject' => 'kimlik-1', 'user_id' => $kullanici->id]);
@@ -101,18 +101,18 @@ class MatchByEmailTest extends TestCase
 
         Http::fake([
             'merkez.test/oauth/token' => Http::response(['access_token' => 'jeton']),
-            'merkez.test/oauth/kullanici' => Http::response([
+            'merkez.test/oauth/userinfo' => Http::response([
                 'sub' => 'kimlik-1',
                 'name' => 'Yönetici',
                 'email' => 'admin@ornek.test',
                 'email_verified' => true,
-                'rol' => 'admin',
-                'hesap_acilabilir' => false,
+                'role' => 'admin',
+                'can_create_account' => false,
             ]),
         ]);
 
         $this->withSession(['kimlik_durum' => 'durum', 'kimlik_dogrulayici' => 'dogrulayici'])
-            ->get('/giris/merkez/geri?state=durum&code=kod')
+            ->get('/login/center/callback?state=durum&code=kod')
             ->assertRedirect(route('login'));
 
         $this->assertGuest();

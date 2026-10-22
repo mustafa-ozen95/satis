@@ -26,25 +26,25 @@ class AuditChainTest extends TestCase
     {
         $kayit = app(ActivityRecorder::class);
 
-        $bir = $kayit->kaydet('deneme', 'bir');
-        $iki = $kayit->kaydet('deneme', 'iki');
+        $bir = $kayit->log('deneme', 'bir');
+        $iki = $kayit->log('deneme', 'iki');
 
         $this->assertNotNull($bir->ozet);
         $this->assertSame($bir->ozet, $iki->onceki_ozet);
-        $this->assertTrue(app(ActivityChain::class)->dogrula()['saglam']);
+        $this->assertTrue(app(ActivityChain::class)->verify()['saglam']);
     }
 
     public function test_degistirilen_satir_zinciri_kirar(): void
     {
         $kayit = app(ActivityRecorder::class);
-        $kayit->kaydet('deneme', 'bir');
-        $hedef = $kayit->kaydet('deneme', 'iki');
-        $kayit->kaydet('deneme', 'üç');
+        $kayit->log('deneme', 'bir');
+        $hedef = $kayit->log('deneme', 'iki');
+        $kayit->log('deneme', 'üç');
 
         /* Doğrudan SQL: modelin olayları devreye girmesin, gerçek kurcalama böyle olur. */
         ActivityLog::query()->whereKey($hedef->getKey())->update(['aciklama' => 'başka bir şey']);
 
-        $sonuc = app(ActivityChain::class)->dogrula();
+        $sonuc = app(ActivityChain::class)->verify();
 
         $this->assertFalse($sonuc['saglam']);
         $this->assertSame($hedef->getKey(), $sonuc['kirik_id']);
@@ -53,13 +53,13 @@ class AuditChainTest extends TestCase
     public function test_silinen_satir_zinciri_kirar(): void
     {
         $kayit = app(ActivityRecorder::class);
-        $kayit->kaydet('deneme', 'bir');
-        $silinecek = $kayit->kaydet('deneme', 'iki');
-        $sonraki = $kayit->kaydet('deneme', 'üç');
+        $kayit->log('deneme', 'bir');
+        $silinecek = $kayit->log('deneme', 'iki');
+        $sonraki = $kayit->log('deneme', 'üç');
 
         ActivityLog::query()->whereKey($silinecek->getKey())->delete();
 
-        $sonuc = app(ActivityChain::class)->dogrula();
+        $sonuc = app(ActivityChain::class)->verify();
 
         $this->assertFalse($sonuc['saglam']);
         $this->assertSame($sonraki->getKey(), $sonuc['kirik_id']);
@@ -67,7 +67,7 @@ class AuditChainTest extends TestCase
 
     public function test_ozet_anahtar_olmadan_uretilemez(): void
     {
-        $satir = app(ActivityRecorder::class)->kaydet('deneme', 'bir');
+        $satir = app(ActivityRecorder::class)->log('deneme', 'bir');
 
         /*
          * Anahtar değişirse özet tutmaz. Düz SHA kullanılsaydı veritabanına
@@ -75,14 +75,14 @@ class AuditChainTest extends TestCase
          */
         config(['activity.chain_key' => 'baska-anahtar']);
 
-        $this->assertFalse(app(ActivityChain::class)->dogrula()['saglam']);
+        $this->assertFalse(app(ActivityChain::class)->verify()['saglam']);
         $this->assertNotNull($satir->ozet);
     }
 
     public function test_kullanici_silinince_kayit_kalir(): void
     {
         $kullanici = User::factory()->create();
-        $satir = app(ActivityRecorder::class)->kaydet('deneme', 'bir', null, $kullanici);
+        $satir = app(ActivityRecorder::class)->log('deneme', 'bir', null, $kullanici);
 
         $ad = $kullanici->name;
         $kullanici->delete();
@@ -94,7 +94,7 @@ class AuditChainTest extends TestCase
          */
         $this->assertDatabaseHas('activity_logs', ['id' => $satir->getKey()]);
         $this->assertSame($ad, $satir->fresh()->kullanici_adi);
-        $this->assertTrue(app(ActivityChain::class)->dogrula()['saglam']);
+        $this->assertTrue(app(ActivityChain::class)->verify()['saglam']);
     }
 
     public function test_kullanici_yetkisi_degisince_ne_degistigi_yazilir(): void
@@ -102,7 +102,7 @@ class AuditChainTest extends TestCase
         $yonetici = User::factory()->admin()->create();
         $hedef = User::factory()->create(['perm_fiyat' => false]);
 
-        $this->actingAs($yonetici)->post(route('admin.kullanicilar.update', $hedef), [
+        $this->actingAs($yonetici)->post(route('admin.users.update', $hedef), [
             'ad' => $hedef->name,
             'eposta' => $hedef->email,
             'rol' => 'teknik',

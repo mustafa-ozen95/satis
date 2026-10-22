@@ -1,4 +1,4 @@
-import { git } from './navigation.js';
+import { go } from './navigation.js';
 /**
  * Teklif bekleme durumu polling'i.
  *
@@ -12,77 +12,77 @@ import { git } from './navigation.js';
  * Çözüm: mantığı buraya, KALICI bir betiğe taşımak ve hem ilk yüklemede
  * hem her yenilemesiz geçiş sonrasında yeniden tetiklemek. Tetiklemeyi
  * app.js yapıyor (bkz. `herCizimde`); modül kendi olayını dinlemiyor —
- * şablondaki bütün modüller gibi `init()` dışa aktarıyor. Veri satır içi enjekte edilmez; `#mesaj-akisi` üzerindeki
+ * şablondaki bütün modüller gibi `init()` dışa aktarıyor. Veri satır içi enjekte edilmez; `#message-stream` üzerindeki
  * `data-*` özniteliklerinden okunur, çünkü bu öznitelikler HTML olarak
  * gelir ve `replaceWith` sonrasında da DOM'da durur.
  */
 
-let aktifKontrolId = null;
+let activePollId = null;
 
-function teklifPollingBaslat() {
-    const akis = document.getElementById('mesaj-akisi');
+function startQuotePolling() {
+    const stream = document.getElementById('message-stream');
 
-    if (!akis) {
-        aktifKontrolId = null;
+    if (!stream) {
+        activePollId = null;
 
         return;
     }
 
     /* Durum ne olursa olsun (hazir/hata/bekliyor) son mesaj gorunur olsun. */
-    akis.scrollTop = akis.scrollHeight;
+    stream.scrollTop = stream.scrollHeight;
 
-    if (akis.dataset.teklifDurum !== 'bekliyor') {
-        aktifKontrolId = null;
+    if (stream.dataset.quoteStatus !== 'bekliyor') {
+        activePollId = null;
 
         return;
     }
 
-    const conversationId = akis.dataset.conversationId;
+    const conversationId = stream.dataset.conversationId;
 
     /* Ayni konusma icin zaten calisan bir kontrol dongusu varsa tekrar baslatma. */
-    if (aktifKontrolId === conversationId) {
+    if (activePollId === conversationId) {
         return;
     }
 
-    aktifKontrolId = conversationId;
+    activePollId = conversationId;
 
-    async function kontrolEt() {
+    async function poll() {
         /* Sayfa degisti mi (baska bir konusmaya gecildi ya da uzaklasildi)? Kesin dur. */
-        if (aktifKontrolId !== conversationId || document.getElementById('mesaj-akisi') !== akis) {
+        if (activePollId !== conversationId || document.getElementById('message-stream') !== stream) {
             return;
         }
 
         try {
-            const res = await fetch(`/teklif-durum/${conversationId}`);
+            const res = await fetch(`/quote-status/${conversationId}`);
             const data = await res.json();
 
-            if (aktifKontrolId !== conversationId) {
+            if (activePollId !== conversationId) {
                 return;
             }
 
-            if (data.durum === 'hazir') {
-                git(window.location.pathname + window.location.search, 'yok');
-            } else if (data.durum === 'hata') {
-                const durumMetni = document.getElementById('durum-metni');
+            if (data.status === 'hazir') {
+                go(window.location.pathname + window.location.search, 'none');
+            } else if (data.status === 'hata') {
+                const statusText = document.getElementById('status-text');
 
-                if (durumMetni) {
-                    durumMetni.textContent = 'Bir hata oluştu: '
-                        + (data.hata_mesaji || 'bilinmeyen hata')
+                if (statusText) {
+                    statusText.textContent = 'Bir hata oluştu: '
+                        + (data.error_message || 'bilinmeyen hata')
                         + ' — tekrar deneyin.';
                 }
 
-                setTimeout(() => git(window.location.pathname + window.location.search, 'yok'), 1500);
+                setTimeout(() => go(window.location.pathname + window.location.search, 'none'), 1500);
             } else {
-                setTimeout(kontrolEt, 1500);
+                setTimeout(poll, 1500);
             }
         } catch {
-            setTimeout(kontrolEt, 2500);
+            setTimeout(poll, 2500);
         }
     }
 
-    kontrolEt();
+    poll();
 }
 
 export function init() {
-    teklifPollingBaslat();
+    startQuotePolling();
 }

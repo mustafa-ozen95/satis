@@ -132,7 +132,7 @@ class KnowledgeOrphansTest extends TestCase
             ['id' => $eskisi, 'metin' => 'eski', 'ustveri' => ['title' => 'Kabin Ölçüleri', 'kayit_id' => (string) $kayit->id]],
         ]);
 
-        $this->artisan('bilgi:indeksle')->assertSuccessful();
+        $this->artisan('knowledge:index')->assertSuccessful();
 
         $this->assertSame([$silinmis, $eskisi], $this->silinenler());
     }
@@ -152,7 +152,7 @@ class KnowledgeOrphansTest extends TestCase
             ['id' => (string) Str::uuid(), 'metin' => 'metin', 'ustveri' => ['title' => 'Yeni', 'kayit_id' => (string) $kayit->id]],
         ], gomme: 400);
 
-        $this->artisan('bilgi:indeksle')->assertFailed();
+        $this->artisan('knowledge:index')->assertFailed();
 
         $this->assertSame([], $this->silinenler());
     }
@@ -171,9 +171,9 @@ class KnowledgeOrphansTest extends TestCase
             ]],
         ]);
 
-        $this->artisan('bilgi:indeksle')
+        $this->artisan('knowledge:index')
             ->expectsOutputToContain('Örnek Sunucu A1')
-            ->expectsOutputToContain('bilgi:indeksle --yetimler')
+            ->expectsOutputToContain('knowledge:index --orphans')
             ->assertFailed();
 
         $this->assertSame([], $this->silinenler());
@@ -181,7 +181,7 @@ class KnowledgeOrphansTest extends TestCase
     }
 
     /**
-     * --yetimler: dışarıdan yazılmış yetimlerin üç türü.
+     * --orphans: dışarıdan yazılmış yetimlerin üç türü.
      *
      * Sitenin eski metni silinir (güncel hâli tarayıcının kaydında), eşi
      * veritabanında olan silinir, başka yerde olmayan bilgi içeri alınır ve
@@ -189,7 +189,7 @@ class KnowledgeOrphansTest extends TestCase
      */
     public function test_yetimler_kopyalari_siler_benzersizi_iceri_alir(): void
     {
-        config(['company.site' => 'https://www.ornek.test']);
+        config(['company.website' => 'https://www.ornek.test']);
 
         $site = $this->kayit('Gizlilik — Toplanan Bilgiler', 'Genel', 'ornek.test');
         $elle = $this->kayit('Kabin Ölçüleri', 'Alan');
@@ -215,7 +215,7 @@ class KnowledgeOrphansTest extends TestCase
             ['id' => $metinsiz, 'metin' => null, 'ustveri' => null],
         ]);
 
-        $this->artisan('bilgi:indeksle', ['--yetimler' => true])->assertSuccessful();
+        $this->artisan('knowledge:index', ['--orphans' => true])->assertSuccessful();
 
         $this->assertSame([$siteninEskisi, $elleninEsi, $metinsiz], $this->silinenler());
 
@@ -230,7 +230,7 @@ class KnowledgeOrphansTest extends TestCase
             && $istek['metadatas'][0]['kayit_id'] === (string) $alinan->id);
 
         /* İkinci tur bir şey değiştirmez: alınan kayıt artık bağlı. */
-        $this->artisan('bilgi:indeksle', ['--yetimler' => true])->assertSuccessful();
+        $this->artisan('knowledge:index', ['--orphans' => true])->assertSuccessful();
         $this->assertSame(3, KnowledgeRecord::query()->count());
         $this->assertCount(3, $this->silinenler());
     }
@@ -245,7 +245,7 @@ class KnowledgeOrphansTest extends TestCase
 
         $this->chroma($yetimler);
 
-        $this->artisan('bilgi:indeksle')->assertSuccessful();
+        $this->artisan('knowledge:index')->assertSuccessful();
 
         $this->assertSame(array_column($yetimler, 'id'), $this->silinenler());
         $this->assertCount(2, Http::recorded(fn (Request $istek): bool => str_ends_with($istek->url(), '/collections/kol-1/get')));
@@ -257,7 +257,7 @@ class KnowledgeOrphansTest extends TestCase
     {
         Http::fake(['*' => Http::response('bozuk', 500)]);
 
-        $this->artisan('bilgi:indeksle')
+        $this->artisan('knowledge:index')
             ->expectsOutputToContain('Chroma okunamadı')
             ->assertFailed();
     }
@@ -274,7 +274,7 @@ class KnowledgeOrphansTest extends TestCase
 
         $this->chroma([$this->vektoru($kayit)], koleksiyonuSil: 500);
 
-        $this->artisan('bilgi:indeksle', ['--sifirla' => true])
+        $this->artisan('knowledge:index', ['--reset' => true])
             ->expectsOutputToContain('İndeks silinemedi')
             ->assertFailed();
 
@@ -288,7 +288,7 @@ class KnowledgeOrphansTest extends TestCase
 
         $this->chroma([], koleksiyonuSil: 404);
 
-        $this->artisan('bilgi:indeksle', ['--sifirla' => true])->assertSuccessful();
+        $this->artisan('knowledge:index', ['--reset' => true])->assertSuccessful();
 
         $yeni = $kayit->fresh();
         $this->assertNotNull($yeni->chroma_id);

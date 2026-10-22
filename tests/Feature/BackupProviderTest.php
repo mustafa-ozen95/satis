@@ -30,7 +30,7 @@ class BackupProviderTest extends TestCase
         config([
             'services.gemini.key' => 'deneme',
             'services.gemini.model' => 'gemini-birincil',
-            'services.gemini.yedek_model' => null,
+            'services.gemini.fallback_model' => null,
             'services.groq.key' => 'groq-deneme',
             'services.groq.model' => 'deneme-model',
             'services.llm.retry_delay' => 0,
@@ -49,7 +49,7 @@ class BackupProviderTest extends TestCase
             ),
         ]);
 
-        app(LlmService::class)->generateText('talep', LlmService::sistemIstemi(), [
+        app(LlmService::class)->generateText('talep', LlmService::systemPrompt(), [
             'type' => 'OBJECT',
             'properties' => ['musteri_maili' => ['type' => 'STRING']],
         ]);

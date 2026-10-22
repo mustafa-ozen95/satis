@@ -23,7 +23,7 @@ class ModelSelectionTest extends TestCase
     public function test_ayar_ekraninda_modeller_secenek_olarak_gelir(): void
     {
         $this->actingAs(User::factory()->admin()->create())
-            ->get(route('admin.ayarlar.index', ['grup' => 'teklif']))
+            ->get(route('admin.settings.index', ['group' => 'quote']))
             ->assertOk()
             ->assertSee('gemini-3.6-flash')
             ->assertSee('gemini-3.7-flash')
@@ -33,8 +33,8 @@ class ModelSelectionTest extends TestCase
     public function test_secilen_model_kaydedilir(): void
     {
         $this->actingAs(User::factory()->admin()->create())
-            ->put(route('admin.ayarlar.update'), [
-                'group' => 'teklif',
+            ->put(route('admin.settings.update'), [
+                'group' => 'quote',
                 'services__gemini__model' => 'gemini-3.7-flash',
                 'services__gemini__yedek_model' => 'gemini-3.6-flash',
                 'services__groq__model' => 'openai/gpt-oss-120b',
@@ -51,9 +51,9 @@ class ModelSelectionTest extends TestCase
     public function test_listede_olmayan_model_reddedilir(): void
     {
         $this->actingAs(User::factory()->admin()->create())
-            ->from(route('admin.ayarlar.index', ['grup' => 'teklif']))
-            ->put(route('admin.ayarlar.update'), [
-                'group' => 'teklif',
+            ->from(route('admin.settings.index', ['group' => 'quote']))
+            ->put(route('admin.settings.update'), [
+                'group' => 'quote',
                 'services__gemini__model' => 'uydurma-model',
                 'services__groq__model' => 'openai/gpt-oss-120b',
                 'services__llm__timeout' => 120,

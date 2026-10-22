@@ -41,19 +41,19 @@ class SettingController extends Controller implements HasMiddleware
 
     public function index(Request $request): View
     {
-        $grup = (string) $request->query('grup', '');
-        $grup = in_array($grup, $this->katalog->groupKeys(), true)
-            ? $grup
+        $group = (string) $request->query('group', '');
+        $group = in_array($group, $this->katalog->groupKeys(), true)
+            ? $group
             : $this->katalog->groupKeys()[0];
 
         return view('settings.index', [
-            'group' => $grup,
-            'definition' => $this->katalog->group($grup),
-            'settings' => $this->katalog->definitionsFor($grup),
-            'values' => collect($this->katalog->definitionsFor($grup))
-                ->mapWithKeys(fn ($tanim): array => [$tanim->key => $this->ekranDegeri($tanim->key)])
+            'group' => $group,
+            'definition' => $this->katalog->group($group),
+            'settings' => $this->katalog->definitionsFor($group),
+            'values' => collect($this->katalog->definitionsFor($group))
+                ->mapWithKeys(fn ($tanim): array => [$tanim->key => $this->displayValue($tanim->key)])
                 ->all(),
-            'tabs' => $this->sekmeler->all($grup),
+            'tabs' => $this->sekmeler->all($group),
         ]);
     }
 
@@ -71,16 +71,16 @@ class SettingController extends Controller implements HasMiddleware
                 ->map(fn (array $d, string $anahtar): string => sprintf(
                     '%s: %s → %s',
                     $anahtar,
-                    $this->metin($d['from']),
-                    $this->metin($d['to']),
+                    $this->text($d['from']),
+                    $this->text($d['to']),
                 ))
                 ->implode(' · ');
 
-            $this->kayit->kaydet('ayar_degisti', $ozet);
+            $this->kayit->log('ayar_degisti', $ozet);
         }
 
         return redirect()
-            ->route('admin.ayarlar.index', ['grup' => $request->group()])
+            ->route('admin.settings.index', ['group' => $request->group()])
             ->with('status', $degisenler === [] ? 'Değişiklik yok.' : 'Ayarlar kaydedildi.');
     }
 
@@ -91,14 +91,14 @@ class SettingController extends Controller implements HasMiddleware
      * okuyan taraf yapar. Diziyi ekranda dizi gibi göstermek, kullanıcıya
      * PHP söz dizimi yazdırmak olurdu.
      */
-    private function ekranDegeri(string $anahtar): mixed
+    private function displayValue(string $anahtar): mixed
     {
         $deger = $this->ayarlar->current($anahtar);
 
         return is_array($deger) ? implode(',', $deger) : $deger;
     }
 
-    private function metin(mixed $deger): string
+    private function text(mixed $deger): string
     {
         if (is_bool($deger)) {
             return $deger ? 'açık' : 'kapalı';

@@ -22,15 +22,15 @@ use Throwable;
  * aramaya karışır ve modele silinmiş ya da eskimiş bilgi söyletir. Her tur
  * yetimleri arar (bkz. yetimleriTemizle).
  *
- *     php artisan bilgi:indeksle              # eksik/değişmiş olanlar + yetim taraması
- *     php artisan bilgi:indeksle --tumu       # hepsini yeniden yaz
- *     php artisan bilgi:indeksle --yetimler   # dışarıdan yazılmış yetimleri ayıkla
+ *     php artisan knowledge:index              # eksik/değişmiş olanlar + yetim taraması
+ *     php artisan knowledge:index --all       # hepsini yeniden yaz
+ *     php artisan knowledge:index --orphans   # dışarıdan yazılmış yetimleri ayıkla
  */
 class KnowledgeIndexCommand extends Command
 {
-    protected $signature = 'bilgi:indeksle {--tumu : Değişmemiş kayıtları da yeniden indeksle}
-                                           {--sifirla : İndeksi sil ve baştan kur (gömme modeli değişince ŞART)}
-                                           {--yetimler : Dışarıdan yazılmış yetim vektörleri veritabanına al ya da sil}';
+    protected $signature = 'knowledge:index {--all : Değişmemiş kayıtları da yeniden indeksle}
+                                           {--reset : İndeksi sil ve baştan kur (gömme modeli değişince ŞART)}
+                                           {--orphans : Dışarıdan yazılmış yetim vektörleri veritabanına al ya da sil}';
 
     protected $description = 'Bilgi bankasının Chroma indeksini veritabanından kurar';
 
@@ -40,9 +40,9 @@ class KnowledgeIndexCommand extends Command
          * SIFIRLAMA: gömme modeli değiştiğinde eski vektörler başka bir
          * uzaydadır ve silinmedikçe sonuçları bozar.
          */
-        if ($this->option('sifirla')) {
+        if ($this->option('reset')) {
             try {
-                $kb->indeksiSifirla();
+                $kb->resetIndex();
             } catch (Throwable $e) {
                 $this->components->error('İndeks silinemedi; kayıtlara dokunulmadı: '.$e->getMessage());
 
@@ -53,12 +53,12 @@ class KnowledgeIndexCommand extends Command
         }
 
         /* İndekslemeden ÖNCE: içeri alınan kayıtlar bu turda yazılsın. */
-        if ($this->option('yetimler') && ! $this->yabancilariAyikla($kb)) {
+        if ($this->option('orphans') && ! $this->pruneForeign($kb)) {
             return self::FAILURE;
         }
 
-        $indekslendi = $this->indeksle($kb);
-        $yetimsiz = $this->yetimleriTemizle($kb);
+        $indekslendi = $this->index($kb);
+        $yetimsiz = $this->pruneOrphans($kb);
 
         /*
          * Eksik kalan varsa komut BAŞARISIZ döner: zamanlayıcının çıktısı ve
@@ -68,11 +68,11 @@ class KnowledgeIndexCommand extends Command
     }
 
     /** Eksik ya da değişmiş kayıtları Chroma'ya yazar; hepsi yazıldıysa true. */
-    private function indeksle(KnowledgeBaseService $kb): bool
+    private function index(KnowledgeBaseService $kb): bool
     {
-        $kayitlar = $this->option('tumu') || $this->option('sifirla')
+        $kayitlar = $this->option('all') || $this->option('reset')
             ? KnowledgeRecord::query()->get()
-            : KnowledgeRecord::query()->indekslenmemis()->get();
+            : KnowledgeRecord::query()->unindexed()->get();
 
         if ($kayitlar->isEmpty()) {
             $this->components->info('İndekslenecek kayıt yok.');
@@ -83,7 +83,7 @@ class KnowledgeIndexCommand extends Command
         $basarili = 0;
 
         foreach ($kayitlar as $kayit) {
-            if ($kb->indeksle($kayit)) {
+            if ($kb->index($kayit)) {
                 $basarili++;
             }
         }
@@ -103,17 +103,17 @@ class KnowledgeIndexCommand extends Command
      *   başka bir kimlikle yeniden yazılmış. Asıl veri veritabanı olduğu için
      *   KENDİLİĞİNDEN silinir.
      * - DIŞARIDAN yazılmış (kayit_id yok): içinde veritabanında olmayan bilgi
-     *   olabilir, kendiliğinden SİLİNMEZ. Tur başarısız döner ve --yetimler'i
+     *   olabilir, kendiliğinden SİLİNMEZ. Tur başarısız döner ve --orphans'i
      *   gösterir; kararı bir insan verir.
      *
      * ÖNCE CHROMA, SONRA VERİTABANI okunur. Panelden eklenen bir kayıtta önce
      * satır, sonra vektör yazılır; ters sırada okunsaydı o an eklenen kaydın
      * vektörü "satırı yok" sanılıp silinebilirdi.
      */
-    private function yetimleriTemizle(KnowledgeBaseService $kb): bool
+    private function pruneOrphans(KnowledgeBaseService $kb): bool
     {
         try {
-            $vektorler = $kb->vektorler();
+            $vektorler = $kb->vectors();
         } catch (Throwable $e) {
             $this->components->error('Yetim taraması yapılamadı, Chroma okunamadı: '.$e->getMessage());
 
@@ -132,7 +132,7 @@ class KnowledgeIndexCommand extends Command
                 continue;
             }
 
-            $kayitId = $this->kayitKimligi($vektor);
+            $kayitId = $this->recordId($vektor);
 
             if ($kayitId === null) {
                 $yabanci[] = $vektor;
@@ -156,7 +156,7 @@ class KnowledgeIndexCommand extends Command
 
         if ($bizim !== []) {
             try {
-                $kb->vektorleriSil($bizim);
+                $kb->deleteVectors($bizim);
                 $this->components->info('Silinen yetim vektör (kaydı silinmiş ya da yeniden yazılmış): '.count($bizim));
             } catch (Throwable $e) {
                 $this->components->error(count($bizim).' yetim vektör silinemedi: '.$e->getMessage());
@@ -166,8 +166,8 @@ class KnowledgeIndexCommand extends Command
 
         if ($yabanci !== []) {
             $this->components->warn(count($yabanci).' vektör dışarıdan yazılmış ve hiçbir kayda ait değil; dokunulmadı:');
-            $this->components->bulletList(array_map($this->etiket(...), array_slice($yabanci, 0, 10)));
-            $this->components->warn('İncelemek ve ayıklamak için: php artisan bilgi:indeksle --yetimler');
+            $this->components->bulletList(array_map($this->label(...), array_slice($yabanci, 0, 10)));
+            $this->components->warn('İncelemek ve ayıklamak için: php artisan knowledge:index --orphans');
             $temiz = false;
         }
 
@@ -175,13 +175,13 @@ class KnowledgeIndexCommand extends Command
     }
 
     /**
-     * DIŞARIDAN YAZILMIŞ YETİMLER (--yetimler).
+     * DIŞARIDAN YAZILMIŞ YETİMLER (--orphans).
      *
      * Chroma'ya veritabanı atlanarak yazılmış belgeler (sitenin eski bir
      * metni, başka hiçbir yerde olmayan elle yazılmış ürün notları) aramada
      * çıkar ama ekranda görünmez, düzeltilemez ve yedeğe girmez. Kural:
      *
-     * - Kaynağı site olan SİLİNİR: site içeriğinin sahibi bilgi:siteden turu
+     * - Kaynağı site olan SİLİNİR: site içeriğinin sahibi knowledge:site turu
      *   ve güncel metin onun kayıtlarında. Turun bilmediği bir kopya hiç
      *   güncellenmez, sayfa siteden kalksa da kalkmaz.
      * - Aynı başlık ve kategori veritabanında varsa SİLİNİR: asıl olan kayıttır
@@ -193,10 +193,10 @@ class KnowledgeIndexCommand extends Command
      * --chromadan yalnız içeri alır, kopyaları SİLMEZ; bu seçenek ikisini
      * birden yapar.
      */
-    private function yabancilariAyikla(KnowledgeBaseService $kb): bool
+    private function pruneForeign(KnowledgeBaseService $kb): bool
     {
         try {
-            $vektorler = $kb->vektorler(metinle: true);
+            $vektorler = $kb->vectors(metinle: true);
         } catch (Throwable $e) {
             $this->components->error('Chroma okunamadı: '.$e->getMessage());
 
@@ -210,21 +210,21 @@ class KnowledgeIndexCommand extends Command
 
         foreach ($vektorler as $vektor) {
             /* Bağlı olana dokunulmaz; bizim yetimlerimizi tur kendisi temizler. */
-            if (isset($bagli[$vektor['id']]) || $this->kayitKimligi($vektor) !== null) {
+            if (isset($bagli[$vektor['id']]) || $this->recordId($vektor) !== null) {
                 continue;
             }
 
             /* Sütun boyları: baslik/kategori 255, kaynak 60. */
-            $baslik = mb_substr($this->alan($vektor, 'title'), 0, 255);
-            $kategori = mb_substr($this->alan($vektor, 'category'), 0, 255);
-            $kaynak = mb_substr($this->alan($vektor, 'source'), 0, 60);
+            $baslik = mb_substr($this->field($vektor, 'title'), 0, 255);
+            $kategori = mb_substr($this->field($vektor, 'category'), 0, 255);
+            $kaynak = mb_substr($this->field($vektor, 'source'), 0, 60);
             $metin = is_string($vektor['metin']) ? $vektor['metin'] : '';
 
-            if ($kaynak === KnowledgeSiteCommand::kaynak()
+            if ($kaynak === KnowledgeSiteCommand::source()
                 || trim($metin) === ''
                 || KnowledgeRecord::query()->where('baslik', $baslik)->where('kategori', $kategori)->exists()) {
                 $silinecek[] = $vektor['id'];
-                $this->line('  sil · '.$this->etiket($vektor));
+                $this->line('  sil · '.$this->label($vektor));
 
                 continue;
             }
@@ -249,12 +249,12 @@ class KnowledgeIndexCommand extends Command
             }
 
             $alinan++;
-            $this->line('  al  · '.$this->etiket($vektor));
+            $this->line('  al  · '.$this->label($vektor));
         }
 
         if ($silinecek !== []) {
             try {
-                $kb->vektorleriSil($silinecek);
+                $kb->deleteVectors($silinecek);
             } catch (Throwable $e) {
                 $this->components->error(count($silinecek).' vektör silinemedi: '.$e->getMessage());
 
@@ -275,9 +275,9 @@ class KnowledgeIndexCommand extends Command
      *
      * @param  array{ustveri: array<string, mixed>}  $vektor
      */
-    private function kayitKimligi(array $vektor): ?string
+    private function recordId(array $vektor): ?string
     {
-        $kimlik = $this->alan($vektor, 'kayit_id');
+        $kimlik = $this->field($vektor, 'kayit_id');
 
         return $kimlik === '' ? null : $kimlik;
     }
@@ -290,7 +290,7 @@ class KnowledgeIndexCommand extends Command
      *
      * @param  array{ustveri: array<string, mixed>}  $vektor
      */
-    private function alan(array $vektor, string $anahtar): string
+    private function field(array $vektor, string $anahtar): string
     {
         $deger = $vektor['ustveri'][$anahtar] ?? '';
 
@@ -298,10 +298,10 @@ class KnowledgeIndexCommand extends Command
     }
 
     /** @param  array{ustveri: array<string, mixed>}  $vektor */
-    private function etiket(array $vektor): string
+    private function label(array $vektor): string
     {
-        return '['.($this->alan($vektor, 'source') ?: '?').'] '
-            .($this->alan($vektor, 'category') ?: '?').' / '
-            .($this->alan($vektor, 'title') ?: '(başlıksız)');
+        return '['.($this->field($vektor, 'source') ?: '?').'] '
+            .($this->field($vektor, 'category') ?: '?').' / '
+            .($this->field($vektor, 'title') ?: '(başlıksız)');
     }
 }

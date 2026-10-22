@@ -27,7 +27,7 @@ return [
     |
     */
 
-    'aciklama' => env('APP_ACIKLAMA', 'Satış Yönetim Sistemi'),
+    'description' => env('APP_DESCRIPTION', 'Satış Yönetim Sistemi'),
 
     /*
     |--------------------------------------------------------------------------

@@ -17,56 +17,56 @@ import { emit } from './toast.js';
  * gerekir ve iki çizim zamanla ayrışırdı.
  */
 export function init() {
-    document.addEventListener('click', async (olay) => {
-        const dugme = olay.target.closest('[data-teklif-daha-dugme]');
+    document.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-quote-more-button]');
 
-        if (!dugme) {
+        if (!button) {
             return;
         }
 
-        olay.preventDefault();
+        event.preventDefault();
 
-        const kap = dugme.closest('[data-teklif-daha]');
-        const liste = dugme.closest('[data-teklif-listesi]');
+        const container = button.closest('[data-quote-more]');
+        const list = button.closest('[data-quote-list]');
 
-        if (!kap || !liste || dugme.disabled) {
+        if (!container || !list || button.disabled) {
             return;
         }
 
         /* Çift tıklama aynı sayfayı iki kez eklerdi. */
-        dugme.disabled = true;
-        const eskiYazi = dugme.textContent;
-        dugme.textContent = 'Yükleniyor…';
+        button.disabled = true;
+        const oldString = button.textContent;
+        button.textContent = 'Yükleniyor…';
 
         try {
-            const adres = new URL(dugme.dataset.adres || '/tekliflerim/daha', window.location.origin);
-            adres.searchParams.set('oncesi', dugme.dataset.oncesi);
+            const address = new URL(button.dataset.url || '/quotes/more', window.location.origin);
+            address.searchParams.set('oncesi', button.dataset.before);
 
             /* Arama kutusundaki süzgeç korunur; yoksa devamı süzgeçsiz gelirdi. */
-            const arama = new URL(window.location.href).searchParams.get('q');
+            const search = new URL(window.location.href).searchParams.get('q');
 
-            if (arama) {
-                adres.searchParams.set('q', arama);
+            if (search) {
+                address.searchParams.set('q', search);
             }
 
-            const yanit = await fetch(adres, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const response = await fetch(address, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
 
-            if (!yanit.ok) {
-                throw new Error(String(yanit.status));
+            if (!response.ok) {
+                throw new Error(String(response.status));
             }
 
-            const html = await yanit.text();
+            const html = await response.text();
 
             /*
              * Yeni satırlar düğmenin YERİNE geçer: gelen parça kendi
              * "Devamını gör" düğmesini de taşıyor (ya da taşımıyor — liste
              * bittiyse düğme hiç gelmez ve kap kendiliğinden kaybolur).
              */
-            kap.insertAdjacentHTML('beforebegin', html);
-            kap.remove();
+            container.insertAdjacentHTML('beforebegin', html);
+            container.remove();
         } catch {
-            dugme.disabled = false;
-            dugme.textContent = eskiYazi;
+            button.disabled = false;
+            button.textContent = oldString;
 
             emit('Devamı yüklenemedi; tekrar deneyin.', 'error');
         }

@@ -48,8 +48,8 @@ class QuoteTermsTest extends TestCase
     public function test_sureler_ayardan_okunur(): void
     {
         config([
-            'quote.hizmet_suresi' => '12 ay taahhütlüdür.',
-            'quote.gecerlilik_gun' => 7,
+            'quote.service_time' => '12 ay taahhütlüdür.',
+            'quote.validity_days' => 7,
         ]);
 
         $sonuc = $this->uret('sunucu istiyorum', '1.000,00 TL / ay');
@@ -77,7 +77,7 @@ class QuoteTermsTest extends TestCase
     /** Model kurala uymayıp kendi yazdıysa İKİNCİ KOPYA çıkmaz. */
     public function test_iki_kez_eklenmez(): void
     {
-        $sonuc = $this->uret('sunucu', "500,00 TL / ay\n\n".QuoteTerms::mailMetni());
+        $sonuc = $this->uret('sunucu', "500,00 TL / ay\n\n".QuoteTerms::mailText());
 
         $this->assertSame(1, substr_count($sonuc['musteri_maili'], QuoteTerms::BASLIK));
     }
@@ -85,7 +85,7 @@ class QuoteTermsTest extends TestCase
     /** KDV ORANI İSTEMDE YAZAR: model kendi başına bir oran varsaymasın. */
     public function test_kdv_orani_isteme_girer(): void
     {
-        config(['quote.kdv_orani' => 20]);
+        config(['quote.vat_rate' => 20]);
 
         $istem = $this->istem('sunucu istiyorum');
 
@@ -109,20 +109,20 @@ class QuoteTermsTest extends TestCase
     /** Şirket adı verilmemişse istemde ad geçmez; verilmişse geçer. */
     public function test_sirket_adi_ayardan_gelir(): void
     {
-        config(['company.ad' => '']);
+        config(['company.name' => '']);
         $istem = $this->istem('sunucu istiyorum');
         $this->assertStringStartsWith('Sen satış tekliflerini hazırlayan', $istem);
 
-        config(['company.ad' => 'Örnek Bilişim A.Ş.']);
+        config(['company.name' => 'Örnek Bilişim A.Ş.']);
         $this->assertStringStartsWith('Sen Örnek Bilişim A.Ş. adına satış tekliflerini', $this->istem('sunucu istiyorum'));
-        $this->assertStringContainsString('Örnek Bilişim A.Ş. için çalışan', LlmService::sistemIstemi());
+        $this->assertStringContainsString('Örnek Bilişim A.Ş. için çalışan', LlmService::systemPrompt());
     }
 
     /** Şirkete özgü istem dosyası varsa genel istemin YERİNE geçer. */
     public function test_sirkete_ozgu_istem_dosyasi_kullanilir(): void
     {
         $dosya = $this->istemDosyasi(
-            "ÖZEL KURAL: örnek ürün adı kullan.\n{fiyat_baglami}\n{bilgi_baglami}\n{kosullar}\nTALEP: {talep}\n"
+            "ÖZEL KURAL: örnek ürün adı kullan.\n{price_context}\n{knowledge_context}\n{terms}\nTALEP: {request}\n"
         );
 
         $istem = $this->istem('sunucu istiyorum');
@@ -141,7 +141,7 @@ class QuoteTermsTest extends TestCase
      */
     public function test_yer_tutucusu_eksik_istem_dosyasi_kullanilmaz(): void
     {
-        $dosya = $this->istemDosyasi("ÖZEL KURAL\n{fiyat_baglami}\n{talep}\n");
+        $dosya = $this->istemDosyasi("ÖZEL KURAL\n{price_context}\n{request}\n");
 
         $istem = $this->istem('sunucu istiyorum');
 
@@ -158,7 +158,7 @@ class QuoteTermsTest extends TestCase
     {
         $dosya = (string) tempnam(sys_get_temp_dir(), 'teklif-istemi');
         file_put_contents($dosya, $metin);
-        config(['company.istem_dosyasi' => $dosya]);
+        config(['company.prompt_file' => $dosya]);
 
         return $dosya;
     }
@@ -177,7 +177,7 @@ class QuoteTermsTest extends TestCase
         $kb = Mockery::mock(KnowledgeBaseService::class);
         $kb->shouldReceive('query')->once()->andReturn([]);
 
-        return (new QuoteService($llm, $kb))->generateTeklif($talep);
+        return (new QuoteService($llm, $kb))->generateQuote($talep);
     }
 
     /** Modele giden istemi yakalar. */
@@ -199,7 +199,7 @@ class QuoteTermsTest extends TestCase
         $kb = Mockery::mock(KnowledgeBaseService::class);
         $kb->shouldReceive('query')->once()->andReturn([]);
 
-        (new QuoteService($llm, $kb))->generateTeklif($talep);
+        (new QuoteService($llm, $kb))->generateQuote($talep);
 
         return $yakalanan;
     }

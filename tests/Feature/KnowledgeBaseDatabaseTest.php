@@ -67,7 +67,7 @@ class KnowledgeBaseDatabaseTest extends TestCase
     {
         /*
          * İndeks yazılamazsa kayıt KAYBOLMAZ; yalnızca indekslenmemiş kalır
-         * ve `bilgi:indeksle` onu sonradan yakalar.
+         * ve `knowledge:index` onu sonradan yakalar.
          */
         Http::fake(['*' => Http::response('bozuk', 500)]);
         config(['services.gemini.key' => 'deneme']);
@@ -76,7 +76,7 @@ class KnowledgeBaseDatabaseTest extends TestCase
 
         $this->assertDatabaseHas('bilgi_kayitlari', ['id' => $id]);
         $this->assertNull(KnowledgeRecord::find($id)->indekslendi);
-        $this->assertSame(1, KnowledgeRecord::query()->indekslenmemis()->count());
+        $this->assertSame(1, KnowledgeRecord::query()->unindexed()->count());
     }
 
     public function test_liste_dis_servise_sormaz(): void
@@ -126,7 +126,7 @@ class KnowledgeBaseDatabaseTest extends TestCase
         Http::fake();
 
         $this->actingAs(User::factory()->admin()->create())
-            ->get(route('bilgi-bankasi.index'))
+            ->get(route('knowledge-base.index'))
             ->assertOk()
             ->assertSee('Görünsün');
     }
@@ -149,7 +149,7 @@ class KnowledgeBaseDatabaseTest extends TestCase
         Http::fake();
 
         $this->actingAs(User::factory()->admin()->create())
-            ->get(route('bilgi-bankasi.index'))
+            ->get(route('knowledge-base.index'))
             ->assertOk()
             ->assertSee('Kurulum seti')
             ->assertDontSee('seed_notes')
@@ -168,7 +168,7 @@ class KnowledgeBaseDatabaseTest extends TestCase
         Http::fake();
 
         $this->actingAs(User::factory()->admin()->create())
-            ->post(route('bilgi-bankasi.store'), [
+            ->post(route('knowledge-base.store'), [
                 'baslik' => 'Yeni kayıt',
                 'kategori' => '__yeni',
                 'kategori_yeni' => 'Taşıma',
@@ -185,7 +185,7 @@ class KnowledgeBaseDatabaseTest extends TestCase
         Http::fake();
 
         $this->actingAs(User::factory()->admin()->create())
-            ->post(route('bilgi-bankasi.store'), [
+            ->post(route('knowledge-base.store'), [
                 'baslik' => 'Yeni kayıt',
                 'kategori' => '__yeni',
                 'kategori_yeni' => '   ',
@@ -204,9 +204,9 @@ class KnowledgeBaseDatabaseTest extends TestCase
         Http::fake();
 
         $this->actingAs(User::factory()->admin()->create())
-            ->get(route('bilgi-bankasi.index'))
+            ->get(route('knowledge-base.index'))
             ->assertOk()
-            ->assertSee('data-kategori-secim', false)
+            ->assertSee('data-category-select', false)
             ->assertSee('+ Yeni kategori…');
     }
 

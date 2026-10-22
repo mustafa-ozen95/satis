@@ -47,12 +47,12 @@ class LlmService
         .'fiyat kalemlerini kullan.';
 
     /**
-     * Sistem istemi: şirketin adı kurulumdan gelir (SIRKET_ADI); verilmemişse
+     * Sistem istemi: şirketin adı kurulumdan gelir (COMPANY_NAME); verilmemişse
      * ad geçmez.
      */
-    public static function sistemIstemi(): string
+    public static function systemPrompt(): string
     {
-        $ad = Company::ad();
+        $ad = Company::name();
 
         $kimlik = $ad === ''
             ? 'Sen bir satış teklif asistanısın. '
@@ -71,12 +71,12 @@ class LlmService
      */
     public function generateText(string $prompt, ?string $system = null, ?array $sema = null): string
     {
-        $system ??= self::sistemIstemi();
+        $system ??= self::systemPrompt();
         $geminiKey = config('services.gemini.key');
         $sonHata = null;
 
         if ($geminiKey) {
-            foreach ($this->geminiModelleri() as $model) {
+            foreach ($this->geminiModels() as $model) {
                 try {
                     return $this->callGemini($prompt, $system, $geminiKey, $model, $sema);
                 } catch (Throwable $e) {
@@ -122,14 +122,14 @@ class LlmService
 
         $model = config('services.gemini.embed_model');
 
-        $response = $this->istek(['x-goog-api-key' => $geminiKey], (int) config('services.llm.embed_timeout', 30))
+        $response = $this->http(['x-goog-api-key' => $geminiKey], (int) config('services.llm.embed_timeout', 30))
             ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:embedContent", [
                 'model' => "models/{$model}",
                 'content' => ['parts' => [['text' => $text]]],
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException('Gemini embedding çağrısı başarısız: '.$this->kisalt($response->body()));
+            throw new RuntimeException('Gemini embedding çağrısı başarısız: '.$this->truncate($response->body()));
         }
 
         return $response->json('embedding.values', []);
@@ -140,11 +140,11 @@ class LlmService
      *
      * @return list<string>
      */
-    private function geminiModelleri(): array
+    private function geminiModels(): array
     {
         return array_values(array_unique(array_filter([
             (string) config('services.gemini.model'),
-            (string) config('services.gemini.yedek_model'),
+            (string) config('services.gemini.fallback_model'),
         ])));
     }
 
@@ -163,7 +163,7 @@ class LlmService
             $uretim['responseSchema'] = $sema;
         }
 
-        $response = $this->istek(['x-goog-api-key' => $key])
+        $response = $this->http(['x-goog-api-key' => $key])
             ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent", [
                 'system_instruction' => ['parts' => [['text' => $system]]],
                 'contents' => [['parts' => [['text' => $prompt]]]],
@@ -171,7 +171,7 @@ class LlmService
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException("Gemini çağrısı başarısız ({$response->status()}): ".$this->kisalt($response->body()));
+            throw new RuntimeException("Gemini çağrısı başarısız ({$response->status()}): ".$this->truncate($response->body()));
         }
 
         $metin = (string) $response->json('candidates.0.content.parts.0.text', '');
@@ -230,11 +230,11 @@ class LlmService
                 ."\n\nYanıtı YALNIZCA geçerli bir JSON nesnesi olarak ver; başka hiçbir metin ekleme.";
         }
 
-        $response = $this->istek([], null, $key)
+        $response = $this->http([], null, $key)
             ->post('https://api.groq.com/openai/v1/chat/completions', $govde);
 
         if (! $response->successful()) {
-            throw new RuntimeException("Groq çağrısı başarısız ({$response->status()}): ".$this->kisalt($response->body()));
+            throw new RuntimeException("Groq çağrısı başarısız ({$response->status()}): ".$this->truncate($response->body()));
         }
 
         $metin = (string) $response->json('choices.0.message.content', '');
@@ -255,14 +255,14 @@ class LlmService
      *
      * @param  array<string, string>  $basliklar
      */
-    private function istek(array $basliklar = [], ?int $zamanAsimi = null, ?string $jeton = null): PendingRequest
+    private function http(array $basliklar = [], ?int $zamanAsimi = null, ?string $jeton = null): PendingRequest
     {
         $istek = Http::timeout($zamanAsimi ?? (int) config('services.llm.timeout', 120))
             ->connectTimeout((int) config('services.llm.connect_timeout', 10))
             ->retry(
                 (int) config('services.llm.retry', 3),
                 (int) config('services.llm.retry_delay', 1500),
-                fn (Throwable $e): bool => $this->gecici($e),
+                fn (Throwable $e): bool => $this->isTransient($e),
                 throw: false,
             );
 
@@ -280,7 +280,7 @@ class LlmService
      * istek geçer. 400 ve 403 ise isteğin kendisiyle ilgilidir; tekrar
      * denemek yalnızca gecikme üretir.
      */
-    private function gecici(Throwable $e): bool
+    private function isTransient(Throwable $e): bool
     {
         if ($e instanceof ConnectionException) {
             return true;
@@ -300,7 +300,7 @@ class LlmService
      * içinde isteğin bir kısmı. Hata satırı "ne oldu" sorusunu yanıtlamalı,
      * yanıtın tamamını taşımamalı.
      */
-    private function kisalt(string $govde): string
+    private function truncate(string $govde): string
     {
         $govde = trim(preg_replace('/\s+/', ' ', $govde) ?? $govde);
 

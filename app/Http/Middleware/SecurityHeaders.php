@@ -30,7 +30,7 @@ class SecurityHeaders
             }
         }
 
-        $this->onbellekKapat($request, $response);
+        $this->disableCache($request, $response);
 
         return $response;
     }
@@ -57,7 +57,7 @@ class SecurityHeaders
      * Var olan başlık yine ezilmez (bkz. yukarısı): bilerek başka bir şey
      * diyen bir yanıtın kararı sessizce geri alınmamalı.
      */
-    private function onbellekKapat(Request $request, Response $response): void
+    private function disableCache(Request $request, Response $response): void
     {
         /*
          * "Zaten var mı" diye BAKILMAZ: Laravel oturumlu her yanıta

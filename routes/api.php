@@ -35,13 +35,13 @@ Route::middleware(['auth:api', 'throttle:api'])
     ->prefix('v1')
     ->name('api.v1.')
     ->group(function (): void {
-        Route::get('fiyatlar', [PriceApiController::class, 'index'])->name('fiyatlar.index');
-        Route::get('fiyatlar/{fiyat}', [PriceApiController::class, 'show'])->name('fiyatlar.show');
+        Route::get('prices', [PriceApiController::class, 'index'])->name('prices.index');
+        Route::get('prices/{price}', [PriceApiController::class, 'show'])->name('prices.show');
 
-        Route::get('bilgi', [KnowledgeApiController::class, 'index'])->name('bilgi.index');
+        Route::get('knowledge', [KnowledgeApiController::class, 'index'])->name('knowledge.index');
 
-        Route::post('teklif', [QuoteApiController::class, 'store'])->name('teklif.store');
-        Route::get('teklif/{teklif}', [QuoteApiController::class, 'show'])->name('teklif.show');
+        Route::post('quotes', [QuoteApiController::class, 'store'])->name('quotes.store');
+        Route::get('quotes/{quote}', [QuoteApiController::class, 'show'])->name('quotes.show');
     });
 
 /*
@@ -57,6 +57,6 @@ Route::middleware(['auth:api', 'throttle:api'])
  *
  * Hız sınırı var: imza tutmasa bile bu uç merkeze bir istek attırabilir.
  */
-Route::post('kimlik/tazele', IdentityRefreshController::class)
+Route::post('identity/refresh', IdentityRefreshController::class)
     ->middleware('throttle:60,1')
-    ->name('api.kimlik.tazele');
+    ->name('api.identity.refresh');

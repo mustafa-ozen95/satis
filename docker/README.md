@@ -23,7 +23,7 @@ Vekilsiz deneme: `cp docker-compose.override.example.yml docker-compose.override
 | Servis | Ne | Not |
 |---|---|---|
 | `panel` | nginx + php-fpm + kuyruk işçisi + zamanlayıcı, supervisord altında | yalnız 80 |
-| `db` | MariaDB 11.4 | `VT_KOPYA=0` ile kalkmaz (dışarıdaki veritabanı) |
+| `db` | MariaDB 11.4 | `DB_REPLICAS=0` ile kalkmaz (dışarıdaki veritabanı) |
 | `redis` | önbellek, oturum, kuyruk | kalıcılık kapalı: yeniden başlatmada oturumlar düşer, veri düşmez |
 | `chroma` | bilgi bankasının vektör deposu (`chromadb/chroma` 1.4.4, özetle sabit) | port açmaz; panel `http://chroma:8000` ile ulaşır |
 
@@ -37,24 +37,24 @@ değişiklikten sonra bakın:
 
 200 değilse bilgi bankası ölüdür.
 
-`AG_YALITIMI=true` konteynerleri kimlik merkezinden, LLM servislerinden (Gemini, Groq) ve
+`NETWORK_ISOLATED=true` konteynerleri kimlik merkezinden, LLM servislerinden (Gemini, Groq) ve
 dışarıdan yalıtır (dış dünyadan ayrık bir deneme kurulumu için); teklif üretimi o zaman
 çalışmaz.
 
 
 ## Hacimler
 
-Adlar `ONEK` ile başlar (varsayılan `satis`); aynı sunucuda ikinci kurulum onu değiştirir.
+Adlar `STACK_PREFIX` ile başlar (varsayılan `satis`); aynı sunucuda ikinci kurulum onu değiştirir.
 
 | Hacim | İçerik |
 |---|---|
 | `satis_storage` | `storage/app`: APP_KEY (verilmediyse), ilk parola dosyası, Ayarlar → Veritabanı'nın bağlantı dosyası (`database/`), şirkete özgü istem ve site sayfaları (`sirket/`) |
 | `satis_database` | db servisinin veri dizini — kullanıcılar, konuşmalar, fiyat kalemleri, denetim kaydı |
 | `satis_logs` | `storage/logs` |
-| `satis-chroma-data` | Chroma'nın vektör deposu (`CHROMA_HACMI`) |
+| `satis-chroma-data` | Chroma'nın vektör deposu (`CHROMA_VOLUME`) |
 
-Chroma'nın konteyner adı (`CHROMA_KONTEYNERI`, varsayılan `satis-chroma`) ve hacmi
-(`CHROMA_HACMI`, varsayılan `satis-chroma-data`) **ONEK'e bağlı değil**. Bilgi bankası
+Chroma'nın konteyner adı (`CHROMA_CONTAINER`, varsayılan `satis-chroma`) ve hacmi
+(`CHROMA_VOLUME`, varsayılan `satis-chroma-data`) **STACK_PREFIX'e bağlı değil**. Bilgi bankası
 başka adlı bir hacimde duran kurulum o adları ortamda verir; yanlış hacim bilgi bankasını
 boş açar. Aynı sunucuda ikinci kurulumda ikisi de değiştirilir, yoksa iki kurulum aynı
 bilgi bankasını paylaşır.
@@ -82,10 +82,10 @@ taraması atlanır.
 
 | Ayar | Ne |
 |---|---|
-| `SIRKET_ADI` | teklif isteminde asistanın adına çalıştığı şirket; boşsa ad geçmez |
-| `SIRKET_SITESI` | kurumsal sitenin kök adresi; `bilgi:siteden` sayfaları buna göre okur, siteden gelen kayıtların kaynak etiketi bunun alan adıdır (`www.` atılır) |
-| `storage/app/company/quote-prompt.txt` | şirkete özgü teklif istemi; varsa genel istemin **yerine** geçer. `{fiyat_baglami}`, `{bilgi_baglami}`, `{kosullar}`, `{talep}` yer tutucularının dördü de olmalı, biri eksikse dosya kullanılmaz ve günlüğe uyarı düşer |
-| `storage/app/company/site-pages.json` | `bilgi:siteden`'in okuyacağı sayfalar: `{"/yol": {"baslik": "...", "kategori": "..."}}`; anahtar göreli yol ya da tam adres. Dosya yoksa tur hiçbir kayda dokunmadan biter |
+| `COMPANY_NAME` | teklif isteminde asistanın adına çalıştığı şirket; boşsa ad geçmez |
+| `COMPANY_WEBSITE` | kurumsal sitenin kök adresi; `knowledge:site` sayfaları buna göre okur, siteden gelen kayıtların kaynak etiketi bunun alan adıdır (`www.` atılır) |
+| `storage/app/company/quote-prompt.txt` | şirkete özgü teklif istemi; varsa genel istemin **yerine** geçer. `{price_context}`, `{knowledge_context}`, `{terms}`, `{request}` yer tutucularının dördü de olmalı, biri eksikse dosya kullanılmaz ve günlüğe uyarı düşer |
+| `storage/app/company/site-pages.json` | `knowledge:site`'in okuyacağı sayfalar: `{"/yol": {"baslik": "...", "kategori": "..."}}`; anahtar göreli yol ya da tam adres. Dosya yoksa tur hiçbir kayda dokunmadan biter |
 
 İki dosya storage hacmindedir (`satis_storage`): depoya ve imaja girmez, yeniden
 dağıtımda yerinde kalır, her kullanımda yeniden okunur (yeniden başlatma gerekmez).
@@ -112,7 +112,7 @@ açılışta kullanıcı ve veritabanı bununla kurulur. Açılışta panel veri
 üç dakika bekler, gelmezse açılmaz (konteyner yeniden dener).
 
 Dışarıdaki ya da platformun yönettiği bir MariaDB/MySQL: `DB_*`'ı ona çevirin ve
-`VT_KOPYA=0` deyin.
+`DB_REPLICAS=0` deyin.
 
 Oturumun saat dilimi konteynerin saatidir (`DB_TIMEZONE`, varsayılan `+03:00`): UTC'de
 çalışan bir sunucuda TIMESTAMP sütunları 3 saat kaymış okunmasın.
@@ -170,14 +170,14 @@ derlemek yerine onu kullanabilir.
 Ayarlar → Güncelleme (yalnız yönetici) çalışan sürümü GitHub'da main dalının **son başarılı
 imaj derlemesiyle** karşılaştırır: kaç commit geride, hangi commit'ler yeni. Yön de ölçülür;
 çalışan sürüm son derlemeden yeniyse "güncelleme" denmez. Kontrol her sabah 06:50'de kendiliğinden
-yapılır (`guncelleme:denetle`). Yeni sürüm varsa yöneticiler panelin üstünde uyarı görür.
+yapılır (`update:check`). Yeni sürüm varsa yöneticiler panelin üstünde uyarı görür.
 Ekran **yalnızca bakar**; güncelleme sunucudan, yedekle ve onayla yapılır.
 
-- Çalışan sürüm imaja derlemede yazılır (`ARG SURUM` → `UYGULAMA_SURUMU`; iş akışı commit'i verir).
+- Çalışan sürüm imaja derlemede yazılır (`ARG APP_VERSION` → `ENV APP_VERSION`; iş akışı commit'i verir).
 - Depo açık: jeton gerekmez, GitHub'a jetonsuz sorulur (sınır IP başına saatte 60 istek). Depo
-  özelse `GUNCELLEME_JETONU` salt okunur bir jeton olmalı (fine-grained, yalnız panel depoları,
+  özelse `UPDATE_TOKEN` salt okunur bir jeton olmalı (fine-grained, yalnız panel depoları,
   Contents ve Actions: read). Erişilemezse kontrol "hata" der, panelin başka yeri etkilenmez.
-- Çalışan sürüm derlemede imaja yazılır (`ARG SURUM`, iş akışı commit'i verir). Derlemeye commit
+- Çalışan sürüm derlemede imaja yazılır (`ARG APP_VERSION`, iş akışı commit'i verir). Derlemeye commit
   vermeyen platformlarda (NineDeploy gibi) bağlamdaki `.git`'ten okunur (`docker/version-read.sh`;
   `.dockerignore` yalnız `HEAD` ve ref'leri alır).
 - Panel GitHub'a çıkamıyorsa (kapalı ağ) kontrol "erişilemedi" der.

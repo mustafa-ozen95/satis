@@ -33,7 +33,7 @@ use Throwable;
  * YAPAY ZEKÂ ÇAĞRISI YOK: iş yalnız veri çekimi. Yapılan iş HTML okumak ve
  * metni OLDUĞU GİBİ yazmak: özetleyen,
  * yeniden yazan ya da yorumlayan bir adım yok. Vektör indeksi de burada
- * üretilmez; onu saat başı koşan `bilgi:indeksle` turu yapar.
+ * üretilmez; onu saat başı koşan `knowledge:index` turu yapar.
  *
  * HEPSİ YA DA HİÇBİRİ. Sayfalar önce baştan sona OKUNUR ve doğrulanır; bu
  * aşamada tek satır yazılmaz. Bir tek sayfa okunamazsa ya da şüpheli
@@ -51,31 +51,31 @@ use Throwable;
  * haftalık bir tur kimsenin bakmadığı bir günlükte sessizce düşerse, bilgi
  * bankasının eskidiği ancak yanlış bir teklifte fark edilir.
  *
- *     php artisan bilgi:siteden           # okur, doğrular, yazar
- *     php artisan bilgi:siteden --kuru    # yalnızca ne olacağını yazar
- *     php artisan bilgi:siteden --zorla   # küçülme denetimini yok say
+ *     php artisan knowledge:site           # okur, doğrular, yazar
+ *     php artisan knowledge:site --dry-run    # yalnızca ne olacağını yazar
+ *     php artisan knowledge:site --force   # küçülme denetimini yok say
  *
- * SAYFALAR VE SİTE KURULUMDAN GELİR (SIRKET_SITESI, storage/app/company/
+ * SAYFALAR VE SİTE KURULUMDAN GELİR (COMPANY_WEBSITE, storage/app/company/
  * site-pages.json; bkz. config/company.php). Liste yoksa tur hiçbir şeye
  * dokunmadan atlanır.
  */
 class KnowledgeSiteCommand extends Command
 {
-    protected $signature = 'bilgi:siteden {--kuru : Yazmadan, yalnızca bulunanları listele}
-                                          {--zorla : Sayfa küçüldüyse de yaz (tasarım değiştiyse)}';
+    protected $signature = 'knowledge:site {--dry-run : Yazmadan, yalnızca bulunanları listele}
+                                          {--force : Sayfa küçüldüyse de yaz (tasarım değiştiyse)}';
 
     protected $description = 'Kurumsal sitedeki hizmet bilgilerini bilgi bankasına aktarır';
 
     /**
      * Kaynak etiketi: bu kayıtların nereden geldiği kayıtta dursun.
      *
-     * Açık: yetim ayıklaması (bilgi:indeksle --yetimler) site içeriğini bu
+     * Açık: yetim ayıklaması (knowledge:index --orphans) site içeriğini bu
      * etiketten tanıyor; değer iki yerde ayrı ayrı yazılırsa ayrışır. Sitenin
      * alan adından türetilir (bkz. Company::siteKaynagi).
      */
-    public static function kaynak(): string
+    public static function source(): string
     {
-        return Company::siteKaynagi();
+        return Company::siteSource();
     }
 
     /** Bir bölümün kayda değer sayılması için en az bu kadar karakter. */
@@ -92,7 +92,7 @@ class KnowledgeSiteCommand extends Command
     private const KUCULME_SINIRI = 0.5;
 
     /** Son başarılı çıkarımın hacmi sayfa başına saklanır. */
-    private const HACIM_ANAHTARI = 'bilgi:siteden:hacim:';
+    private const HACIM_ANAHTARI = 'knowledge:site:hacim:';
 
     /*
      * OKUNACAK SAYFALAR KURULUMDAN GELİR (bkz. config/company.php →
@@ -109,9 +109,9 @@ class KnowledgeSiteCommand extends Command
     public function handle(KnowledgeBaseService $kb, ActivityRecorder $kayit): int
     {
         try {
-            $sayfalar = Company::siteSayfalari();
+            $sayfalar = Company::sitePages();
         } catch (RuntimeException $e) {
-            return $this->iptal($kayit, $e->getMessage());
+            return $this->abort($kayit, $e->getMessage());
         }
 
         /*
@@ -129,16 +129,16 @@ class KnowledgeSiteCommand extends Command
         $toplanan = [];
 
         foreach ($sayfalar as $adres => $sayfa) {
-            $okunan = $this->sayfayiOku($adres, $sayfa);
+            $okunan = $this->readPage($adres, $sayfa);
 
             if ($okunan === null) {
-                return $this->iptal($kayit, "{$adres} okunamadı ya da şüpheli görünüyor.");
+                return $this->abort($kayit, "{$adres} okunamadı ya da şüpheli görünüyor.");
             }
 
             $toplanan[$adres] = $okunan;
         }
 
-        if ($this->option('kuru')) {
+        if ($this->option('dry-run')) {
             foreach ($toplanan as $sayfa) {
                 foreach ($sayfa['bolumler'] as $bolum) {
                     $this->line(sprintf('  %-58s %d karakter', mb_substr($bolum['baslik'], 0, 58), mb_strlen($bolum['metin'])));
@@ -163,11 +163,11 @@ class KnowledgeSiteCommand extends Command
             foreach ($toplanan as $sayfa) {
                 foreach ($sayfa['bolumler'] as $bolum) {
                     $gorulen[] = $bolum['baslik'];
-                    $this->yaz($bolum, $sayfa['kategori'], $sayac);
+                    $this->write($bolum, $sayfa['kategori'], $sayac);
                 }
             }
 
-            $sayac['silinen'] = $this->eskileriSil($kb, $gorulen);
+            $sayac['silinen'] = $this->deleteStale($kb, $gorulen);
         });
 
         foreach ($toplanan as $adres => $sayfa) {
@@ -187,7 +187,7 @@ class KnowledgeSiteCommand extends Command
          * gerçek olayları görünmez kılar.
          */
         if ($sayac['eklenen'] + $sayac['guncellenen'] + $sayac['silinen'] > 0) {
-            $kayit->kaydet('bilgi_site_tarama', $ozet);
+            $kayit->log('bilgi_site_tarama', $ozet);
         }
 
         return self::SUCCESS;
@@ -200,7 +200,7 @@ class KnowledgeSiteCommand extends Command
      * Sessizce iptal edilen bir tur, bilgi bankasının eskidiğini ancak yanlış
      * bir teklifte fark ettirirdi.
      */
-    private function iptal(ActivityRecorder $kayit, string $sebep): int
+    private function abort(ActivityRecorder $kayit, string $sebep): int
     {
         $mesaj = "Site taraması iptal edildi: {$sebep} Hiçbir kayıt değiştirilmedi.";
 
@@ -208,7 +208,7 @@ class KnowledgeSiteCommand extends Command
 
         Log::warning($mesaj);
         report(new RuntimeException($mesaj));
-        $kayit->kaydet('bilgi_site_tarama_iptal', $mesaj);
+        $kayit->log('bilgi_site_tarama_iptal', $mesaj);
 
         return self::FAILURE;
     }
@@ -220,7 +220,7 @@ class KnowledgeSiteCommand extends Command
      * @param  array{baslik: string, kategori: string}  $sayfa
      * @return array{kategori: string, hacim: int, bolumler: list<array{baslik: string, metin: string}>}|null
      */
-    private function sayfayiOku(string $adres, array $sayfa): ?array
+    private function readPage(string $adres, array $sayfa): ?array
     {
         try {
             $html = Http::timeout(25)
@@ -235,7 +235,7 @@ class KnowledgeSiteCommand extends Command
         }
 
         $bolumler = array_values(array_filter(
-            $this->soruyaBol($this->bolumler($html)),
+            $this->splitIntoQuestions($this->sections($html)),
             fn (array $bolum): bool => mb_strlen($bolum['metin']) >= self::EN_AZ,
         ));
 
@@ -254,9 +254,9 @@ class KnowledgeSiteCommand extends Command
         $hacim = array_sum(array_map(static fn (array $b): int => mb_strlen($b['metin']), $bolumler));
         $onceki = (int) Cache::get(self::HACIM_ANAHTARI.md5($adres), 0);
 
-        if (! $this->option('zorla') && $onceki > 0 && $hacim < $onceki * self::KUCULME_SINIRI) {
+        if (! $this->option('force') && $onceki > 0 && $hacim < $onceki * self::KUCULME_SINIRI) {
             $this->components->error(sprintf(
-                '%s: içerik %d karakterden %d karaktere düştü — çıkarım kırılmış olabilir. (--zorla ile yazdırılır.)',
+                '%s: içerik %d karakterden %d karaktere düştü — çıkarım kırılmış olabilir. (--force ile yazdırılır.)',
                 $adres, $onceki, $hacim,
             ));
 
@@ -272,7 +272,7 @@ class KnowledgeSiteCommand extends Command
      * @param  array{baslik: string, metin: string}  $bolum
      * @param  array<string, int>  $sayac
      */
-    private function yaz(array $bolum, string $kategori, array &$sayac): void
+    private function write(array $bolum, string $kategori, array &$sayac): void
     {
         $kayit = KnowledgeRecord::query()->where('baslik', $bolum['baslik'])->first();
 
@@ -281,7 +281,7 @@ class KnowledgeSiteCommand extends Command
                 'baslik' => $bolum['baslik'],
                 'kategori' => $kategori,
                 'metin' => $bolum['metin'],
-                'kaynak' => self::kaynak(),
+                'kaynak' => self::source(),
             ]);
 
             $sayac['eklenen']++;
@@ -295,7 +295,7 @@ class KnowledgeSiteCommand extends Command
          * Satış ekibinin kendi eklediği bir kayıt aynı başlığı taşıyorsa site
          * metni onun üstüne yazmamalı; siteden gelenler kaynağından tanınır.
          */
-        if ($kayit->kaynak !== self::kaynak()) {
+        if ($kayit->kaynak !== self::source()) {
             $sayac['degismeyen']++;
 
             return;
@@ -323,10 +323,10 @@ class KnowledgeSiteCommand extends Command
      *
      * @param  list<string>  $gorulen
      */
-    private function eskileriSil(KnowledgeBaseService $kb, array $gorulen): int
+    private function deleteStale(KnowledgeBaseService $kb, array $gorulen): int
     {
         $eskiler = KnowledgeRecord::query()
-            ->where('kaynak', self::kaynak())
+            ->where('kaynak', self::source())
             ->whereNotIn('baslik', $gorulen)
             ->get();
 
@@ -347,7 +347,7 @@ class KnowledgeSiteCommand extends Command
      * @param  list<array{baslik: string, metin: string}>  $bolumler
      * @return list<array{baslik: string, metin: string}>
      */
-    private function soruyaBol(array $bolumler): array
+    private function splitIntoQuestions(array $bolumler): array
     {
         $cikti = [];
 
@@ -403,7 +403,7 @@ class KnowledgeSiteCommand extends Command
      *
      * @return list<array{baslik: string, metin: string}>
      */
-    private function bolumler(string $html): array
+    private function sections(string $html): array
     {
         $belge = new DOMDocument;
         $onceki = libxml_use_internal_errors(true);

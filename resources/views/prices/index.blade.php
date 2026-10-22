@@ -7,7 +7,7 @@
         <p class="page-head__subtitle">Teklif AI fiyatları buradan okur, asla kendi hesaplamaz.</p>
       </div>
       <div class="page-head__actions">
-        <a href="#" class="btn btn--primary btn--sm" data-modal-open="fiyat-ekle"><x-icon name="plus" />Fiyat kalemi ekle</a>
+        <a href="#" class="btn btn--primary btn--sm" data-modal-open="price-add"><x-icon name="plus" />Fiyat kalemi ekle</a>
       </div>
     </header>
 
@@ -38,33 +38,33 @@
                   yazacağını SUNUCUDAN öğrenir, biçimi kendi uydurmaz.
                 --}}
                 {{-- Kategori SEÇİLİR: hücre seçenekleri kendisi taşıyor (bkz. inline-edit.js). --}}
-                <td data-label="Kategori" data-alan="category" data-tur="secim"
-                    data-secenekler="{{ json_encode($kategoriler, JSON_UNESCAPED_UNICODE) }}"
-                    data-adres="{{ route('fiyatlar.alan', $f) }}"
-                    data-ham="{{ $f->category }}" data-gosterim="{{ $f->category }}"
+                <td data-label="Kategori" data-field="category" data-type="select"
+                    data-options="{{ json_encode($kategoriler, JSON_UNESCAPED_UNICODE) }}"
+                    data-url="{{ route('prices.field', $f) }}"
+                    data-raw="{{ $f->category }}" data-display="{{ $f->category }}"
                     title="Düzenlemek için çift tıklayın">{{ $f->category }}</td>
 
-                <td data-label="Ad" class="satir-baslik" data-alan="name" data-tur="metin"
-                    data-adres="{{ route('fiyatlar.alan', $f) }}"
-                    data-ham="{{ $f->name }}" data-gosterim="{{ $f->name }}"
+                <td data-label="Ad" class="row-title" data-field="name" data-type="text"
+                    data-url="{{ route('prices.field', $f) }}"
+                    data-raw="{{ $f->name }}" data-display="{{ $f->name }}"
                     title="Düzenlemek için çift tıklayın">{{ $f->name }}</td>
 
-                <td data-label="Fiyat" class="table__cell--mono" data-alan="price" data-tur="sayi"
-                    data-adres="{{ route('fiyatlar.alan', $f) }}"
-                    data-ham="{{ $f->hamFiyat() }}"
-                    data-gosterim="{{ $f->gosterimFiyati() }}"
-                    title="Düzenlemek için çift tıklayın">{{ $f->gosterimFiyati() }}</td>
+                <td data-label="Fiyat" class="table__cell--mono" data-field="price" data-type="number"
+                    data-url="{{ route('prices.field', $f) }}"
+                    data-raw="{{ $f->rawPrice() }}"
+                    data-display="{{ $f->displayPrice() }}"
+                    title="Düzenlemek için çift tıklayın">{{ $f->displayPrice() }}</td>
 
-                <td data-label="Birim" data-alan="unit" data-tur="metin"
-                    data-adres="{{ route('fiyatlar.alan', $f) }}"
-                    data-ham="{{ $f->unit }}" data-gosterim="{{ $f->unit }}"
+                <td data-label="Birim" data-field="unit" data-type="text"
+                    data-url="{{ route('prices.field', $f) }}"
+                    data-raw="{{ $f->unit }}" data-display="{{ $f->unit }}"
                     title="Düzenlemek için çift tıklayın">{{ $f->unit }}</td>
                 <td>
                   <div class="table__row-actions">
                     <a href="#" class="btn btn--sm btn--icon" data-modal-open="fiyat-duzenle-{{ $f->id }}" title="Düzenle"><x-icon name="edit" /></a>
                     <form
                       method="post"
-                      action="{{ route('fiyatlar.destroy', $f) }}"
+                      action="{{ route('prices.destroy', $f) }}"
                       data-confirm="&quot;{{ $f->name }}&quot; kalıcı olarak silinecek."
                       data-confirm-title="Fiyat kalemini sil"
                       data-confirm-variant="danger"
@@ -92,7 +92,7 @@
   id="fiyat-duzenle-{{ $f->id }}"
   data-modal
   @unless ($duzenleAcik[$f->id]) hidden @endunless
-  @if ($duzenleAcik[$f->id]) data-modal-acik data-modal-kapanis="{{ route('fiyatlar.index') }}" @endif
+  @if ($duzenleAcik[$f->id]) data-modal-visible data-modal-close-url="{{ route('prices.index') }}" @endif
   role="dialog" aria-modal="true" aria-labelledby="fiyat-duzenle-{{ $f->id }}-baslik"
 >
   <div class="modal__box modal__box--wide">
@@ -101,7 +101,7 @@
       <button type="button" class="modal__close" data-modal-close aria-label="Kapat">×</button>
     </header>
 
-    <form method="post" action="{{ route('fiyatlar.update', $f) }}">
+    <form method="post" action="{{ route('prices.update', $f) }}">
       @csrf
       <input type="hidden" name="_form" value="duzenle-{{ $f->id }}">
       <div class="modal__body">
@@ -155,19 +155,19 @@
 
 <div
   class="modal"
-  id="fiyat-ekle"
+  id="price-add"
   data-modal
   @unless ($buFormEkle) hidden @endunless
-  @if ($buFormEkle) data-modal-acik data-modal-kapanis="{{ route('fiyatlar.index') }}" @endif
-  role="dialog" aria-modal="true" aria-labelledby="fiyat-ekle-baslik"
+  @if ($buFormEkle) data-modal-visible data-modal-close-url="{{ route('prices.index') }}" @endif
+  role="dialog" aria-modal="true" aria-labelledby="price-add-title"
 >
   <div class="modal__box modal__box--wide">
     <header class="modal__header">
-      <h2 class="modal__title" id="fiyat-ekle-baslik">Fiyat kalemi ekle</h2>
+      <h2 class="modal__title" id="price-add-title">Fiyat kalemi ekle</h2>
       <button type="button" class="modal__close" data-modal-close aria-label="Kapat">×</button>
     </header>
 
-    <form method="post" action="{{ route('fiyatlar.store') }}">
+    <form method="post" action="{{ route('prices.store') }}">
       @csrf
       <input type="hidden" name="_form" value="ekle">
       <div class="modal__body">
@@ -204,8 +204,8 @@
           KDV dahil
         </label>
         <div class="field">
-          <label class="field__label" for="yeni-notlar">Not (opsiyonel)</label>
-          <input type="text" class="input" id="yeni-notlar" name="notlar" value="{{ old('notlar') }}">
+          <label class="field__label" for="new-notes">Not (opsiyonel)</label>
+          <input type="text" class="input" id="new-notes" name="notlar" value="{{ old('notlar') }}">
         </div>
       </div>
       <footer class="modal__footer">

@@ -1,17 +1,17 @@
 <x-layout.app :title="$secili ? Str::limit($secili->ilk_talep, 30) : 'Teklifler'">
-<div class="columns" data-acilis="son">
+<div class="columns" data-open-at="son">
   <div class="column column--wide">
-    <div class="column__head column__head--dikey">
+    <div class="column__head column__head--vertical">
       <div class="row row--between">
         <span class="eyebrow">Tekliflerim</span>
         <span class="column__count">{{ $tekliflerim->count() }}</span>
         <div class="column__hint">
-          <a href="{{ route('teklif.create') }}" class="btn btn--secondary btn--sm" @if (! $secili) aria-pressed="true" @endif>
+          <a href="{{ route('quote.create') }}" class="btn btn--secondary btn--sm" @if (! $secili) aria-pressed="true" @endif>
             <x-icon name="plus" />Yeni
           </a>
         </div>
       </div>
-      <form method="GET" action="{{ route('teklif.create') }}" class="filter teklif-arama">
+      <form method="GET" action="{{ route('quote.create') }}" class="filter quote-search">
         <x-icon name="search" />
         <input class="filter__input" type="search" name="q" value="{{ $arama }}" placeholder="Ara…" aria-label="Tekliflerimde ara">
       </form>
@@ -29,24 +29,24 @@
       ve doğru formu `form` özniteliğinden bulur - yanlışlıkla en yakın
       SARMALAYAN formu değil.
     --}}
-    <form method="post" action="{{ route('teklif.bulk-destroy') }}" id="teklif-toplu-form" data-bulk-form hidden>
+    <form method="post" action="{{ route('quote.bulk-destroy') }}" id="quote-bulk-form" data-bulk-form hidden>
       @csrf
     </form>
 
     @foreach ($tekliflerim as $teklif)
-    <form method="post" action="{{ route('teklif.destroy', $teklif) }}" id="teklif-sil-{{ $teklif->id }}" hidden>
+    <form method="post" action="{{ route('quote.destroy', $teklif) }}" id="quote-delete-{{ $teklif->id }}" hidden>
       @csrf
     </form>
     @endforeach
 
-    <div class="bulk teklif-toplu-cubuk">
+    <div class="bulk quote-bulk-bar">
       <label class="bulk__all">
-        <input type="checkbox" data-bulk-all form="teklif-toplu-form" aria-label="Tüm teklifleri seç">
+        <input type="checkbox" data-bulk-all form="quote-bulk-form" aria-label="Tüm teklifleri seç">
         <span>Tümü</span>
       </label>
       <button
         type="submit"
-        form="teklif-toplu-form"
+        form="quote-bulk-form"
         class="btn btn--sm btn--danger"
         data-bulk-submit
         data-confirm="Seçili teklifler kalıcı olarak silinecek."
@@ -58,7 +58,7 @@
       </button>
     </div>
 
-    <div class="column__body" data-teklif-listesi>
+    <div class="column__body" data-quote-list>
       @include('quote.partials.rows')
     </div>
     @else
@@ -92,21 +92,21 @@
 
       <div
         class="column__body column__body--padded"
-        id="mesaj-akisi"
-        data-teklif-durum="{{ $secili->durum }}"
+        id="message-stream"
+        data-quote-status="{{ $secili->durum }}"
         data-conversation-id="{{ $secili->id }}"
       >
         @foreach ($secili->messages as $mesaj)
-        <div class="mesaj mesaj--{{ $mesaj->role }}">
-          <div class="mesaj__rol">
+        <div class="message mesaj--{{ $mesaj->role }}">
+          <div class="message__role">
             {{ $mesaj->role === 'user' ? 'Siz' : 'Teklif AI' }}
             @if ($mesaj->role === 'assistant')
-            <button type="button" class="btn btn--ghost btn--icon btn--sm" data-kopyala-metin title="Panoya kopyala">
+            <button type="button" class="btn btn--ghost btn--icon btn--sm" data-copy-text title="Panoya kopyala">
               <x-icon name="copy" />
             </button>
             @endif
           </div>
-          <div class="mesaj__icerik" data-kopya-kaynak>{{ $mesaj->content }}</div>
+          <div class="message__content" data-copy-source>{{ $mesaj->content }}</div>
         </div>
         @endforeach
 
@@ -115,8 +115,8 @@
           Bekleme göstergesi: animasyon yerine düz metin; ortak şablonun
           bileşenleri dışında bir görsel dil kullanılmaz.
         --}}
-        <div class="mesaj mesaj--assistant mesaj--bekleniyor" id="bekleme-modulu">
-          <span id="durum-metni">Fiyat motoru ve bilgi bankası taranıyor, AI yanıtı bekleniyor…</span>
+        <div class="message message--assistant message--pending" id="waiting-block">
+          <span id="status-text">Fiyat motoru ve bilgi bankası taranıyor, AI yanıtı bekleniyor…</span>
         </div>
         @elseif ($secili->durum === 'hata')
         <div class="alert alert--danger">
@@ -125,7 +125,7 @@
         @endif
       </div>
 
-      <form method="post" action="{{ route('teklif.reply', $secili) }}" class="mesaj-kutusu">
+      <form method="post" action="{{ route('quote.reply', $secili) }}" class="message-box">
         @csrf
         {{--
           ENTER GÖNDERİR, SHIFT+ENTER ALT SATIR (bkz. js/components/enter-send.js).
@@ -134,7 +134,7 @@
         <textarea
           name="mesaj"
           class="textarea"
-          data-enter-gonder
+          data-enter-send
           placeholder="Ek talep veya soru yazın…  (Enter gönderir, Shift+Enter alt satır)"
           required
           @if ($secili->durum === 'bekliyor') disabled @endif
@@ -150,7 +150,7 @@
       </div>
 
       <div class="column__body column__body--padded">
-        <div class="yeni-teklif">
+        <div class="new-quote">
           <div class="figures figures--tight">
             <div class="figure">
               <div class="figure__value">{{ $istatistik['fiyat_sayisi'] }}</div>
@@ -170,7 +170,7 @@
           <div class="alert alert--danger">{{ $message }}</div>
           @enderror
 
-          <form method="post" action="{{ route('teklif.store') }}">
+          <form method="post" action="{{ route('quote.store') }}">
             @csrf
             <div class="field">
               <label class="field__label" for="talep">Müşteri talebi</label>

@@ -41,10 +41,10 @@ class ApiTokenController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:viewAny,'.ApiToken::class, only: ['index', 'belge', 'show']),
+            new Middleware('can:viewAny,'.ApiToken::class, only: ['index', 'docs', 'show']),
             new Middleware('can:create,'.ApiToken::class, only: ['store']),
-            new Middleware('can:update,jeton', only: ['update', 'sir', 'iptal']),
-            new Middleware('can:delete,jeton', only: ['destroy']),
+            new Middleware('can:update,token', only: ['update', 'secret', 'revoke']),
+            new Middleware('can:delete,token', only: ['destroy']),
         ];
     }
 
@@ -54,7 +54,7 @@ class ApiTokenController extends Controller implements HasMiddleware
             'sections' => $this->sekmeler->all('api'),
             'tokens' => ApiToken::query()->with(['user', 'creator'])->latest('id')->get(),
             'users' => User::query()->where('aktif', true)->orderBy('name')->pluck('name', 'id')->all(),
-            'resources' => $this->kaynaklar(),
+            'resources' => $this->sources(),
             'actionLabels' => $this->sozluk->actions(),
             'defaultLifetime' => (int) config('api.default_lifetime_days'),
         ]);
@@ -66,7 +66,7 @@ class ApiTokenController extends Controller implements HasMiddleware
      * Uç listesi ROTALARDAN üretilir; elle yazılmış ikinci bir liste yoktur
      * (bkz. ApiDocumentation). Belgesiz bir uç eklendiğinde test kırılır.
      */
-    public function belge(ApiDocumentation $belgeler): View
+    public function docs(ApiDocumentation $belgeler): View
     {
         return view('settings.api-docs', [
             'sections' => $this->sekmeler->all('api'),
@@ -77,14 +77,14 @@ class ApiTokenController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function show(ApiToken $jeton): View
+    public function show(ApiToken $token): View
     {
         return view('settings.api-token', [
             'sections' => $this->sekmeler->all('api'),
-            'token' => $jeton->load(['user', 'creator']),
-            'resources' => $this->kaynaklar(),
+            'token' => $token->load(['user', 'creator']),
+            'resources' => $this->sources(),
             'actionLabels' => $this->sozluk->actions(),
-            'abilities' => $jeton->abilityMap(),
+            'abilities' => $token->abilityMap(),
         ]);
     }
 
@@ -93,7 +93,7 @@ class ApiTokenController extends Controller implements HasMiddleware
         $sahip = User::query()->findOrFail($request->integer('user'));
         $sir = ApiToken::mint();
 
-        $jeton = ApiToken::query()->create([
+        $token = ApiToken::query()->create([
             'name' => $request->string('name')->toString(),
             'user_id' => $sahip->id,
             'created_by' => $request->user()?->id,
@@ -104,41 +104,41 @@ class ApiTokenController extends Controller implements HasMiddleware
             'expires_at' => $request->expiresAt(),
         ]);
 
-        $this->kayit->kaydet(
+        $this->kayit->log(
             'api_jeton_olustur',
-            "API jetonu çıkarıldı: {$jeton->name} · sahibi {$sahip->email}",
-            $jeton,
+            "API jetonu çıkarıldı: {$token->name} · sahibi {$sahip->email}",
+            $token,
         );
 
         return redirect()
-            ->route('admin.api-jetonlari.show', $jeton)
+            ->route('admin.api-tokens.show', $token)
             // Sır YALNIZCA burada görünür; oturumda tek seferlik durur.
             ->with('token_plain', $sir['plain'])
             ->with('status', 'Jeton çıkarıldı. Sır yalnızca şimdi gösterilir.');
     }
 
-    public function update(ApiTokenRequest $request, ApiToken $jeton): RedirectResponse
+    public function update(ApiTokenRequest $request, ApiToken $token): RedirectResponse
     {
-        $jeton->update([
+        $token->update([
             'name' => $request->string('name')->toString(),
             'abilities' => $request->abilities($this->sozluk),
             'allowed_ips' => $request->ipList(),
             'expires_at' => $request->expiresAt(),
         ]);
 
-        $this->kayit->kaydet('api_jeton_guncelle', "API jetonu güncellendi: {$jeton->name}", $jeton);
+        $this->kayit->log('api_jeton_guncelle', "API jetonu güncellendi: {$token->name}", $token);
 
-        return back()->with('status', "{$jeton->name} kaydedildi.");
+        return back()->with('status', "{$token->name} kaydedildi.");
     }
 
     /**
      * Yeni bir sır üretir; eskisi anında geçersiz olur.
      */
-    public function sir(ApiToken $jeton): RedirectResponse
+    public function secret(ApiToken $token): RedirectResponse
     {
-        $duz = $jeton->rotate();
+        $duz = $token->rotate();
 
-        $this->kayit->kaydet('api_jeton_sir', "API jetonunun sırrı değiştirildi: {$jeton->name}", $jeton);
+        $this->kayit->log('api_jeton_sir', "API jetonunun sırrı değiştirildi: {$token->name}", $token);
 
         return back()
             ->with('token_plain', $duz)
@@ -149,29 +149,29 @@ class ApiTokenController extends Controller implements HasMiddleware
      * İptal eder ama SİLMEZ: kimin hangi jetonla ne yaptığı kayıtta durur ve
      * iptal edilmiş jetonun adı da o kaydın parçasıdır.
      */
-    public function iptal(ApiToken $jeton): RedirectResponse
+    public function revoke(ApiToken $token): RedirectResponse
     {
-        $jeton->revoke();
+        $token->revoke();
 
-        $this->kayit->kaydet('api_jeton_iptal', "API jetonu iptal edildi: {$jeton->name}", $jeton);
+        $this->kayit->log('api_jeton_iptal', "API jetonu iptal edildi: {$token->name}", $token);
 
-        return back()->with('status', "{$jeton->name} iptal edildi.");
+        return back()->with('status', "{$token->name} iptal edildi.");
     }
 
-    public function destroy(ApiToken $jeton): RedirectResponse
+    public function destroy(ApiToken $token): RedirectResponse
     {
-        $ad = $jeton->name;
-        $jeton->delete();
+        $ad = $token->name;
+        $token->delete();
 
-        $this->kayit->kaydet('api_jeton_sil', "API jetonu silindi: {$ad}", $jeton);
+        $this->kayit->log('api_jeton_sil', "API jetonu silindi: {$ad}", $token);
 
-        return redirect()->route('admin.api-jetonlari.index')->with('status', "{$ad} silindi.");
+        return redirect()->route('admin.api-tokens.index')->with('status', "{$ad} silindi.");
     }
 
     /**
      * @return list<array{key: string, label: string, actions: list<string>}>
      */
-    private function kaynaklar(): array
+    private function sources(): array
     {
         return array_map(fn (string $anahtar): array => [
             'key' => $anahtar,

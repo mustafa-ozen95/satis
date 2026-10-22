@@ -17,10 +17,10 @@
     kutusunu açıyor. Kutu kapalıyken `disabled` durur; gönderilmez ve
     doğrulamayı kirletmez.
 --}}
-<div class="field" data-kategori>
+<div class="field" data-category>
     <label class="field__label" for="{{ $id }}">{{ $label }}</label>
 
-    <select class="input" id="{{ $id }}" name="{{ $name }}" data-kategori-secim required
+    <select class="input" id="{{ $id }}" name="{{ $name }}" data-category-select required
             aria-invalid="{{ $errors->has($name) ? 'true' : 'false' }}">
         <option value="" @selected(blank($deger))>Seçin…</option>
 
@@ -36,7 +36,7 @@
         <option value="__yeni">+ Yeni kategori…</option>
     </select>
 
-    <input type="text" class="input" name="{{ $name }}_yeni" data-kategori-yeni
+    <input type="text" class="input" name="{{ $name }}_yeni" data-category-new
            placeholder="Yeni kategori adı" maxlength="255" disabled hidden
            aria-label="Yeni kategori adı">
 

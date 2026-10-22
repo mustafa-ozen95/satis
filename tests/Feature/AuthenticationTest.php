@@ -20,7 +20,7 @@ class AuthenticationTest extends TestCase
             'password' => 'dogru-sifre',
         ]);
 
-        $response->assertRedirect(route('teklif.create'));
+        $response->assertRedirect(route('quote.create'));
         $this->assertAuthenticatedAs($user);
     }
 

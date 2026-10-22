@@ -13,15 +13,15 @@ namespace App\Support;
  */
 final class FormStatus
 {
-    public static function mi(string $ad): bool
+    public static function matches(string $ad): bool
     {
         return old('_form') === $ad;
     }
 
     /** Sayfa başına tek "ekle" formu. */
-    public static function ekle(): bool
+    public static function isAdd(): bool
     {
-        return self::mi('ekle');
+        return self::matches('ekle');
     }
 
     /**
@@ -30,12 +30,12 @@ final class FormStatus
      * @param  iterable<int|string>  $kimlikler
      * @return array<int|string, bool>
      */
-    public static function duzenleHaritasi(iterable $kimlikler): array
+    public static function editMap(iterable $kimlikler): array
     {
         $harita = [];
 
         foreach ($kimlikler as $kimlik) {
-            $harita[$kimlik] = self::mi("duzenle-{$kimlik}");
+            $harita[$kimlik] = self::matches("duzenle-{$kimlik}");
         }
 
         return $harita;

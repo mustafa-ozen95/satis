@@ -19,25 +19,25 @@ class PriceItemAccessTest extends TestCase
     {
         $user = User::factory()->create(['perm_fiyat' => false]);
 
-        $response = $this->actingAs($user)->get(route('fiyatlar.index'));
+        $response = $this->actingAs($user)->get(route('prices.index'));
 
-        $response->assertRedirect(route('yetkisiz'));
+        $response->assertRedirect(route('unauthorized'));
     }
 
     public function test_user_with_perm_fiyat_can_view_and_manage(): void
     {
         $user = User::factory()->create(['perm_fiyat' => true]);
 
-        $this->actingAs($user)->get(route('fiyatlar.index'))->assertOk();
+        $this->actingAs($user)->get(route('prices.index'))->assertOk();
 
-        $response = $this->actingAs($user)->post(route('fiyatlar.store'), [
+        $response = $this->actingAs($user)->post(route('prices.store'), [
             'category' => 'Test Kategori',
             'name' => 'Test Kalem',
             'unit' => 'ay',
             'price' => 100,
         ]);
 
-        $response->assertRedirect(route('fiyatlar.index'));
+        $response->assertRedirect(route('prices.index'));
         $this->assertDatabaseHas('price_items', ['name' => 'Test Kalem']);
     }
 
@@ -45,7 +45,7 @@ class PriceItemAccessTest extends TestCase
     {
         $admin = User::factory()->admin()->create(['perm_fiyat' => false]);
 
-        $this->actingAs($admin)->get(route('fiyatlar.index'))->assertOk();
+        $this->actingAs($admin)->get(route('prices.index'))->assertOk();
     }
 
     public function test_deleting_a_price_item_requires_perm_fiyat(): void
@@ -53,9 +53,9 @@ class PriceItemAccessTest extends TestCase
         $item = PriceItem::factory()->create();
         $user = User::factory()->create(['perm_fiyat' => false]);
 
-        $response = $this->actingAs($user)->post(route('fiyatlar.destroy', $item));
+        $response = $this->actingAs($user)->post(route('prices.destroy', $item));
 
-        $response->assertRedirect(route('yetkisiz'));
+        $response->assertRedirect(route('unauthorized'));
         $this->assertDatabaseHas('price_items', ['id' => $item->id]);
     }
 }

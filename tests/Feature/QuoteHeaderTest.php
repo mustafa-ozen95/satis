@@ -33,7 +33,7 @@ class QuoteHeaderTest extends TestCase
         $kullanici->conversations()->create(['ilk_talep' => $talep, 'durum' => 'hazir']);
 
         $this->actingAs($kullanici)
-            ->get(route('teklif.create'))
+            ->get(route('quote.create'))
             ->assertOk()
             ->assertSee($talep, false);
     }

@@ -21,10 +21,10 @@ class UpdateWarning extends Component
 
     public function __construct(UpdateCheck $denetim)
     {
-        $this->goster = (Auth::user()?->isAdmin() ?? false) && $denetim->yeniVar();
+        $this->goster = (Auth::user()?->isAdmin() ?? false) && $denetim->hasNew();
 
         if ($this->goster) {
-            $this->geride = (int) ($denetim->son()['geride'] ?? 0);
+            $this->geride = (int) ($denetim->last()['geride'] ?? 0);
         }
     }
 

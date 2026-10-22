@@ -35,7 +35,7 @@ class DatabaseController extends Controller implements HasMiddleware
     /** Sınanan bağlantı bu kadar süre taşınabilir; sonra yeniden sınanır. */
     private const SINAMA_OMRU = 900;
 
-    private const OTURUM_ANAHTARI = 'veritabani.sinanan';
+    private const OTURUM_ANAHTARI = 'database.tested';
 
     private const KAYNAKLAR = [
         'ortam' => ['etiket' => 'Kurulum ayarı', 'aciklama' => 'Bağlantı kurulumun ortam değişkenlerinden (DB_*) geliyor; varsayılanı compose\'taki db servisi.'],
@@ -66,25 +66,25 @@ class DatabaseController extends Controller implements HasMiddleware
 
     public function index(Request $istek): View
     {
-        $sinanan = $this->sinanan($istek);
-        $durum = $this->dosya->durum();
-        $bilgi = $this->veritabani->bilgi();
+        $sinanan = $this->tested($istek);
+        $durum = $this->dosya->status();
+        $bilgi = $this->veritabani->info();
 
         return view('settings.database', [
-            'sections' => $this->sekmeler->all('veritabani'),
+            'sections' => $this->sekmeler->all('database'),
             'bilgi' => $bilgi,
             'kaynak' => self::KAYNAKLAR[$bilgi['kaynak']],
             'adres' => $bilgi['username'].'@'.$bilgi['host'].':'.$bilgi['port'].'/'.$bilgi['database'],
             'durum' => $durum === null ? null : [
                 ...$durum,
-                'istenme' => self::zaman($durum['istenme'] ?? null),
-                'zaman' => self::zaman($durum['zaman'] ?? null),
+                'istenme' => self::formatTime($durum['istenme'] ?? null),
+                'zaman' => self::formatTime($durum['zaman'] ?? null),
             ],
             'asama' => $durum === null ? null : self::ASAMALAR[$durum['durum']],
             // Süren ya da biten bir taşıma varken yeni taşıma formu gösterilmez.
             'tasinabilir' => $bilgi['kaynak'] === 'ortam'
                 && ! in_array($durum['durum'] ?? null, ['tasinacak', 'tasiniyor', 'deneniyor', 'etkin'], true),
-            'sonuclar' => session('veritabani.sonuclar'),
+            'sonuclar' => session('database.results'),
             'sinanan' => $sinanan === null ? null : [
                 ...array_diff_key($sinanan, ['password' => true]),
                 'adres' => $sinanan['username'].'@'.$sinanan['host'].':'.$sinanan['port'].'/'.$sinanan['database'],
@@ -92,9 +92,9 @@ class DatabaseController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function sina(Request $istek): RedirectResponse
+    public function test(Request $istek): RedirectResponse
     {
-        $hedef = ConnectionFile::temizle($istek->validate([
+        $hedef = ConnectionFile::clear($istek->validate([
             'host' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9.\-]+$/'],
             'port' => ['required', 'integer', 'between:1,65535'],
             'database' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9_\-]+$/'],
@@ -105,13 +105,13 @@ class DatabaseController extends Controller implements HasMiddleware
             'database.regex' => 'Veritabanı adında yalnızca harf, rakam, alt çizgi ve tire olabilir.',
         ]));
 
-        if (RemoteDatabase::icMi($hedef['host'])) {
+        if (RemoteDatabase::isInternal($hedef['host'])) {
             return back()->withInput($istek->except('password'))
                 ->withErrors(['host' => 'Bu adres konteynerin kendisi; uzak sunucunun adresini girin.']);
         }
 
-        $sonuclar = $this->veritabani->sina($hedef);
-        $tamam = RemoteDatabase::hepsiTamam($sonuclar);
+        $sonuclar = $this->veritabani->test($hedef);
+        $tamam = RemoteDatabase::allOk($sonuclar);
 
         if ($tamam) {
             $istek->session()->put(self::OTURUM_ANAHTARI, Crypt::encrypt([...$hedef, 'zaman' => time()]));
@@ -121,63 +121,63 @@ class DatabaseController extends Controller implements HasMiddleware
 
         return back()
             ->withInput($istek->except('password'))
-            ->with('veritabani.sonuclar', $sonuclar)
+            ->with('database.results', $sonuclar)
             ->with($tamam ? 'status' : 'error', $tamam
                 ? 'Sınamalar geçti. Taşımak için aşağıdaki düğmeyi kullanın.'
                 : 'Hedef taşımaya uygun değil; ayrıntılar aşağıda.');
     }
 
-    public function tasi(Request $istek): RedirectResponse
+    public function migrate(Request $istek): RedirectResponse
     {
-        $hedef = $this->sinanan($istek);
+        $hedef = $this->tested($istek);
 
         if ($hedef === null) {
-            return back()->withErrors(['veritabani' => 'Önce bağlantıyı sınayın (sınama 15 dakika geçerli).']);
+            return back()->withErrors(['database' => 'Önce bağlantıyı sınayın (sınama 15 dakika geçerli).']);
         }
 
-        if (in_array($this->dosya->asama(), ['tasinacak', 'tasiniyor', 'deneniyor', 'etkin'], true)) {
-            return back()->withErrors(['veritabani' => 'Süren ya da tamamlanmış bir taşıma var.']);
+        if (in_array($this->dosya->stage(), ['tasinacak', 'tasiniyor', 'deneniyor', 'etkin'], true)) {
+            return back()->withErrors(['database' => 'Süren ya da tamamlanmış bir taşıma var.']);
         }
 
-        $sonuclar = $this->veritabani->sina($hedef);
+        $sonuclar = $this->veritabani->test($hedef);
 
-        if (! RemoteDatabase::hepsiTamam($sonuclar)) {
+        if (! RemoteDatabase::allOk($sonuclar)) {
             $istek->session()->forget(self::OTURUM_ANAHTARI);
 
             return back()
-                ->with('veritabani.sonuclar', $sonuclar)
-                ->withErrors(['veritabani' => 'Sınamalar artık geçmiyor; taşıma başlatılmadı.']);
+                ->with('database.results', $sonuclar)
+                ->withErrors(['database' => 'Sınamalar artık geçmiyor; taşıma başlatılmadı.']);
         }
 
         $adres = $hedef['username'].'@'.$hedef['host'].':'.$hedef['port'].'/'.$hedef['database'];
 
         try {
-            $this->dosya->baglantiYaz($hedef);
-            $this->dosya->asamaYaz('tasinacak', null, [
+            $this->dosya->writeConnection($hedef);
+            $this->dosya->writeStage('tasinacak', null, [
                 'hedef' => $adres,
                 'isteyen' => $istek->user()?->name,
                 'istenme' => date('c'),
             ]);
         } catch (Throwable $e) {
             report($e);
-            $this->dosya->baglantiSil();
+            $this->dosya->deleteConnection();
 
-            return back()->withErrors(['veritabani' => 'Taşıma isteği yazılamadı (storage/app/database). Sunucu yöneticisine bildirin.']);
+            return back()->withErrors(['database' => 'Taşıma isteği yazılamadı (storage/app/database). Sunucu yöneticisine bildirin.']);
         }
 
         $gerekce = trim((string) $istek->input('reason', ''));
-        $this->kayit->kaydet('veritabani_tasi', 'Veritabanı taşıması istendi: '.$adres.($gerekce !== '' ? ' — '.$gerekce : ''));
+        $this->kayit->log('veritabani_tasi', 'Veritabanı taşıması istendi: '.$adres.($gerekce !== '' ? ' — '.$gerekce : ''));
         $istek->session()->forget(self::OTURUM_ANAHTARI);
 
-        if (! $this->dosya->yenidenBaslatIste()) {
-            return back()->withErrors(['veritabani' => 'Taşıma istendi ama panel yeniden başlatılamadı. Konteyneri elle yeniden başlatın; taşıma açılışta yapılır.']);
+        if (! $this->dosya->requestRestart()) {
+            return back()->withErrors(['database' => 'Taşıma istendi ama panel yeniden başlatılamadı. Konteyneri elle yeniden başlatın; taşıma açılışta yapılır.']);
         }
 
         return back()->with('status', 'Taşıma istendi. Panel birkaç saniye içinde yeniden başlayacak ve kopya bitene kadar erişilemeyecek; oturumlar kapanır. Sonucu bu sekmede görürsünüz.');
     }
 
     /** Dosyadaki ISO zaman, panelin saat diliminde okunur biçime. */
-    private static function zaman(?string $iso): ?string
+    private static function formatTime(?string $iso): ?string
     {
         try {
             return $iso === null ? null : Carbon::parse($iso)->setTimezone(config('app.timezone'))->format('d.m.Y H:i');
@@ -187,7 +187,7 @@ class DatabaseController extends Controller implements HasMiddleware
     }
 
     /** @return array{host: string, port: int, database: string, username: string, password: string}|null */
-    private function sinanan(Request $istek): ?array
+    private function tested(Request $istek): ?array
     {
         $sifreli = $istek->session()->get(self::OTURUM_ANAHTARI);
 
@@ -201,6 +201,6 @@ class DatabaseController extends Controller implements HasMiddleware
             return null;
         }
 
-        return time() - (int) ($veri['zaman'] ?? 0) <= self::SINAMA_OMRU ? ConnectionFile::temizle($veri) : null;
+        return time() - (int) ($veri['zaman'] ?? 0) <= self::SINAMA_OMRU ? ConnectionFile::clear($veri) : null;
     }
 }

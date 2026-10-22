@@ -47,7 +47,7 @@ return [
          * Aynı anahtarla bir model "UNAVAILABLE - high demand" dönerken
          * başka bir model aynı saniyede yanıtlayabiliyor.
          */
-        'yedek_model' => env('GEMINI_YEDEK_MODEL', 'gemini-3.7-flash'),
+        'fallback_model' => env('GEMINI_FALLBACK_MODEL', 'gemini-3.7-flash'),
 
         /*
          * GÖMME MODELİ. `gemini-embedding-2` daha uzun metni tek parçada
@@ -57,7 +57,7 @@ return [
          * DEĞİŞTİRİRKEN İNDEKS SIFIRLANMALI: vektör uzayı modele özeldir,
          * eski vektörlerle yeni sorgu karşılaştırılamaz.
          *
-         *     php artisan bilgi:indeksle --sifirla
+         *     php artisan knowledge:index --reset
          */
         'embed_model' => env('GEMINI_EMBED_MODEL', 'gemini-embedding-2'),
     ],

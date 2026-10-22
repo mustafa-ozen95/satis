@@ -23,16 +23,29 @@ final class LegacyKeys
         'basit_mod' => 'simple_mode',
     ];
 
+    /** Veritabanındaki tam ad → uygulamadaki tam ad (alt anahtarı da çevrilenler). */
+    private const KEYS = [
+        'kimlik.acik' => 'identity.enabled',
+        'kimlik.yonetici_devri' => 'identity.admin_takeover',
+        'kimlik.dogrulama_dakika' => 'identity.verify_minutes',
+        'teklif.kdv_orani' => 'quote.vat_rate',
+        'teklif.hizmet_suresi' => 'quote.service_time',
+        'teklif.kurulum_suresi' => 'quote.setup_time',
+        'teklif.gecerlilik_gun' => 'quote.validity_days',
+        'panel.parola_uzunluk' => 'panel.password_length',
+        'services.gemini.yedek_model' => 'services.gemini.fallback_model',
+    ];
+
     /** Veritabanındaki ad → uygulamadaki ad. */
     public static function toCurrent(string $key): string
     {
-        return self::swap($key, self::PREFIXES);
+        return self::KEYS[$key] ?? self::swap($key, self::PREFIXES);
     }
 
     /** Uygulamadaki ad → veritabanındaki ad. */
     public static function toStored(string $key): string
     {
-        return self::swap($key, array_flip(self::PREFIXES));
+        return array_flip(self::KEYS)[$key] ?? self::swap($key, array_flip(self::PREFIXES));
     }
 
     /**

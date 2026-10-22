@@ -20,12 +20,12 @@ class PricesController extends Controller
     {
         $this->authorize('viewAny', PriceItem::class);
 
-        $fiyatlar = PriceItem::aktif()->orderBy('category')->orderBy('name')->get();
+        $fiyatlar = PriceItem::active()->orderBy('category')->orderBy('name')->get();
 
         return view('prices.index', [
             'fiyatlar' => $fiyatlar,
-            'duzenleAcik' => FormStatus::duzenleHaritasi($fiyatlar->pluck('id')),
-            'buFormEkle' => FormStatus::ekle(),
+            'duzenleAcik' => FormStatus::editMap($fiyatlar->pluck('id')),
+            'buFormEkle' => FormStatus::isAdd(),
 
             /*
              * Kategori SEÇİLİR. Liste var olan kalemlerden geliyor; serbest
@@ -51,31 +51,31 @@ class PricesController extends Controller
             'kdv_dahil' => $request->boolean('kdv_dahil'),
         ]);
 
-        app(ActivityRecorder::class)->kaydet('fiyat_ekle', "Fiyat kalemi eklendi: {$kalem->category} · {$kalem->name}", $kalem);
+        app(ActivityRecorder::class)->log('fiyat_ekle', "Fiyat kalemi eklendi: {$kalem->category} · {$kalem->name}", $kalem);
 
-        return redirect()->route('fiyatlar.index')->with('status', 'Fiyat kalemi eklendi.');
+        return redirect()->route('prices.index')->with('status', 'Fiyat kalemi eklendi.');
     }
 
-    public function update(StorePriceItemRequest $request, PriceItem $fiyat): RedirectResponse
+    public function update(StorePriceItemRequest $request, PriceItem $price): RedirectResponse
     {
         $this->authorize('manage', PriceItem::class);
 
-        $eskiFiyat = $fiyat->price;
+        $eskiFiyat = $price->price;
 
-        $fiyat->update([
+        $price->update([
             ...$request->validated(),
             'kdv_dahil' => $request->boolean('kdv_dahil'),
         ]);
 
         /* Eski ve yeni değer birlikte yazılır: "ne değişti" sonradan sorulacak. */
-        app(ActivityRecorder::class)->kaydet(
+        app(ActivityRecorder::class)->log(
             'fiyat_guncelle',
-            "Fiyat kalemi güncellendi: {$fiyat->category} · {$fiyat->name}"
-                .($eskiFiyat !== $fiyat->price ? " · {$eskiFiyat} → {$fiyat->price} {$fiyat->currency}" : ''),
-            $fiyat,
+            "Fiyat kalemi güncellendi: {$price->category} · {$price->name}"
+                .($eskiFiyat !== $price->price ? " · {$eskiFiyat} → {$price->price} {$price->currency}" : ''),
+            $price,
         );
 
-        return redirect()->route('fiyatlar.index')->with('status', 'Fiyat kalemi güncellendi.');
+        return redirect()->route('prices.index')->with('status', 'Fiyat kalemi güncellendi.');
     }
 
     /**
@@ -90,38 +90,38 @@ class PricesController extends Controller
      * sonra ne yazacağını sunucudan öğrenir, kendi biçimlendirmesini
      * uydurmaz (fiyat "1500" değil "1500,00 TL" görünür).
      */
-    public function alanGuncelle(PriceFieldRequest $request, PriceItem $fiyat): JsonResponse
+    public function updateField(PriceFieldRequest $request, PriceItem $price): JsonResponse
     {
-        $alan = (string) $request->validated('alan');
-        $deger = $request->validated('deger');
+        $alan = (string) $request->validated('field');
+        $deger = $request->validated('value');
 
-        $onceki = $fiyat->{$alan};
+        $onceki = $price->{$alan};
 
-        $fiyat->update([$alan => $deger]);
+        $price->update([$alan => $deger]);
 
-        app(ActivityRecorder::class)->kaydet(
+        app(ActivityRecorder::class)->log(
             'fiyat_guncelle',
-            "Fiyat kalemi yerinde düzenlendi: {$fiyat->category} · {$fiyat->name}"
-                ." · {$alan}: {$onceki} → {$fiyat->{$alan}}",
-            $fiyat,
+            "Fiyat kalemi yerinde düzenlendi: {$price->category} · {$price->name}"
+                ." · {$alan}: {$onceki} → {$price->{$alan}}",
+            $price,
         );
 
         return response()->json([
-            'ham' => (string) $fiyat->{$alan},
-            'gosterim' => $this->gosterim($fiyat, $alan),
-            'mesaj' => 'Kaydedildi.',
+            'raw' => (string) $price->{$alan},
+            'display' => $this->display($price, $alan),
+            'message' => 'Kaydedildi.',
         ]);
     }
 
     /** Hücrede görünecek metin; biçim tek yerden gelir. */
-    private function gosterim(PriceItem $fiyat, string $alan): string
+    private function display(PriceItem $price, string $alan): string
     {
         return $alan === 'price'
-            ? rtrim(rtrim(number_format((float) $fiyat->price, 2, ',', '.'), '0'), ',').' '.$fiyat->currency
-            : (string) $fiyat->{$alan};
+            ? rtrim(rtrim(number_format((float) $price->price, 2, ',', '.'), '0'), ',').' '.$price->currency
+            : (string) $price->{$alan};
     }
 
-    public function destroy(PriceItem $fiyat): RedirectResponse
+    public function destroy(PriceItem $price): RedirectResponse
     {
         $this->authorize('manage', PriceItem::class);
 
@@ -129,13 +129,13 @@ class PricesController extends Controller
           * Kayıt SİLMEDEN ÖNCE yazılır: silinen satırın adı ve fiyatı
           * sonradan okunamaz, denetim kaydında durmalı.
           */
-        app(ActivityRecorder::class)->kaydet(
+        app(ActivityRecorder::class)->log(
             'fiyat_sil',
-            "Fiyat kalemi silindi: {$fiyat->category} · {$fiyat->name} · {$fiyat->price} {$fiyat->currency}",
+            "Fiyat kalemi silindi: {$price->category} · {$price->name} · {$price->price} {$price->currency}",
         );
 
-        $fiyat->delete();
+        $price->delete();
 
-        return redirect()->route('fiyatlar.index')->with('status', 'Fiyat kalemi silindi.');
+        return redirect()->route('prices.index')->with('status', 'Fiyat kalemi silindi.');
     }
 }

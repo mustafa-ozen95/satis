@@ -9,12 +9,12 @@
 <x-ui.tabs :items="[
     [
         'label' => 'Bilgi Bankası',
-        'url' => route('bilgi-bankasi.index'),
+        'url' => route('knowledge-base.index'),
         'active' => $aktif === 'bilgi',
     ],
     [
         'label' => 'Fiyat Kalemleri',
-        'url' => route('fiyatlar.index'),
+        'url' => route('prices.index'),
         'active' => $aktif === 'fiyat',
     ],
 ]" />

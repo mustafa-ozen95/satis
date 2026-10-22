@@ -59,7 +59,7 @@ return [
             ],
         ],
 
-        'guvenlik' => [
+        'security' => [
             'label' => 'Güvenlik',
             'description' => 'Oturum ve parola kuralları.',
 
@@ -73,7 +73,7 @@ return [
                     'rules' => ['integer', 'min:5', 'max:1440'],
                 ],
 
-                'panel.parola_uzunluk' => [
+                'panel.password_length' => [
                     'label' => 'En kısa parola uzunluğu',
                     'hint' => 'Yeni parolalarda geçerli; var olan parolalar etkilenmez.',
                     'unit' => 'karakter',
@@ -83,7 +83,7 @@ return [
             ],
         ],
 
-        'kimlik' => [
+        'identity' => [
             'label' => 'Kimlik Yönetim Merkezi',
             'description' => 'Merkezle giriş. HANGİ ROLÜN GİREBİLECEĞİ ve hesabın '
                 .'kendiliğinden açılıp açılmayacağı BURADA DEĞİL, merkezdeki '
@@ -91,7 +91,7 @@ return [
                 .'işidir. İstemci kimliği ve sırrı kurulumun ortam değişkenlerindedir.',
 
             'settings' => [
-                'identity.acik' => [
+                'identity.enabled' => [
                     'label' => 'Merkezle giriş',
                     'hint' => 'Kapalıyken giriş ekranında düğme çizilmez ve uçlar 404 döner. '
                         .'Panelin kendi parola girişi her hâlükârda açık kalır.',
@@ -99,7 +99,7 @@ return [
                     'rules' => ['boolean'],
                 ],
 
-                'identity.yonetici_devri' => [
+                'identity.admin_takeover' => [
                     'label' => 'Merkezdeki yönetici burada da yönetici olsun',
                     'hint' => 'KAPALI TUTUN. Açıkken merkezde rol dağıtabilen biri, buradaki '
                         .'hiçbir yöneticinin haberi olmadan kendini burada da yönetici yapabilir.',
@@ -107,7 +107,7 @@ return [
                     'rules' => ['boolean'],
                 ],
 
-                'identity.dogrulama_dakika' => [
+                'identity.verify_minutes' => [
                     'label' => 'Merkeze sorma aralığı',
                     'hint' => '"Erişimi kalkan biri en fazla ne kadar daha içeride kalabilir" '
                         .'sorusunun yanıtı. Her istekte sorulmaz; yanıt kullanıcı başına '
@@ -119,7 +119,7 @@ return [
             ],
         ],
 
-        'teklif' => [
+        'quote' => [
             'label' => 'Teklif motoru',
             'description' => 'Metni üreten modeller. Anahtarlar kurulumun ortam değişkenlerindedir.',
 
@@ -144,7 +144,7 @@ return [
                     'rules' => ['required', 'string', 'max:100'],
                 ],
 
-                'services.gemini.yedek_model' => [
+                'services.gemini.fallback_model' => [
                     'label' => 'Gemini yedek modeli',
                     'hint' => 'Birincisi "yoğunluk" dediğinde aynı sağlayıcıda denenir; '
                         .'sağlayıcı değiştirmeden önce buraya bakılır.',
@@ -194,13 +194,13 @@ return [
          * değerler isteme her zaman girer ve müşteri mailinin sonuna sistem
          * tarafından eklenir.
          */
-        'teklif_kosullari' => [
+        'quote_terms' => [
             'label' => 'Teklif koşulları',
             'description' => 'Her teklifte geçerli olan süreler ve KDV oranı. '
                 .'Model bunları uydurmaz; burada ne yazıyorsa teklifte o yazar.',
 
             'settings' => [
-                'quote.kdv_orani' => [
+                'quote.vat_rate' => [
                     'label' => 'KDV oranı',
                     'hint' => 'Fiyatı "+KDV" olan kalemlerde hesap bu oranla yapılır. '
                         .'Bilgi bankasındaki ödeme koşullarıyla aynı olmalı.',
@@ -209,7 +209,7 @@ return [
                     'rules' => ['required', 'integer', 'between:0,100'],
                 ],
 
-                'quote.hizmet_suresi' => [
+                'quote.service_time' => [
                     'label' => 'Hizmet süresi / faturalama',
                     'hint' => 'Teklifte "Hizmet süresi" satırı olarak yazılır. '
                         .'Taahhütlü çalışılıyorsa burada yazmalı.',
@@ -217,14 +217,14 @@ return [
                     'rules' => ['required', 'string', 'max:300'],
                 ],
 
-                'quote.kurulum_suresi' => [
+                'quote.setup_time' => [
                     'label' => 'Kurulum / teslim süresi',
                     'hint' => 'Teklifte "Kurulum / teslim süresi" satırı olarak yazılır.',
                     'type' => 'string',
                     'rules' => ['required', 'string', 'max:300'],
                 ],
 
-                'quote.gecerlilik_gun' => [
+                'quote.validity_days' => [
                     'label' => 'Teklif geçerlilik süresi',
                     'hint' => 'Teklifin kaç gün geçerli olduğu.',
                     'unit' => 'gün',

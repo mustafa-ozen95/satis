@@ -32,7 +32,7 @@ Schedule::command('queue:prune-failed --hours=168')->daily();
  * MERKEZDEKİ ERİŞİM DEĞİŞİKLİKLERİ — GÜNDE BİR, YEDEK OLARAK.
  *
  * Asıl yol BİLDİRİM: merkez rol ya da durum değişince anında haber veriyor
- * (bkz. routes/api.php → kimlik/tazele) ve panel doğruyu kendi soruyor.
+ * (bkz. routes/api.php → identity/refresh) ve panel doğruyu kendi soruyor.
  * Beş dakikada bir yoklamaya gerek yok — merkez zaten tetikliyor.
  *
  * Tur yine de durur: bildirim kaybolabilir (ağ, yeniden başlatma,
@@ -41,7 +41,7 @@ Schedule::command('queue:prune-failed --hours=168')->daily();
  *
  * withoutOverlapping: merkez yavaşsa turlar üst üste binmesin.
  */
-Schedule::command('kimlik:esitle')->dailyAt('04:10')->withoutOverlapping();
+Schedule::command('identity:sync')->dailyAt('04:10')->withoutOverlapping();
 
 /*
  * DENETİM ZİNCİRİNİ DOĞRULA.
@@ -50,7 +50,7 @@ Schedule::command('kimlik:esitle')->dailyAt('04:10')->withoutOverlapping();
  * bir kez baştan sona doğrulanır ve sonuç önbellekte durur; ekran oradan
  * okur, her açılışta bütün satırları yeniden özetlemez.
  */
-Schedule::command('denetim:dogrula')->dailyAt('03:30');
+Schedule::command('audit:verify')->dailyAt('03:30');
 
 /*
  * BİLGİ BANKASI İNDEKSİ.
@@ -60,7 +60,7 @@ Schedule::command('denetim:dogrula')->dailyAt('03:30');
  * bu tur onu yakalar. Tur olmasaydı eksik indeks sessizce kalır ve teklif
  * üretimi o bilgiyi hiç görmezdi.
  */
-Schedule::command('bilgi:indeksle')->hourly()->withoutOverlapping();
+Schedule::command('knowledge:index')->hourly()->withoutOverlapping();
 
 /*
  * KURUMSAL SİTEDEKİ BİLGİLER.
@@ -77,7 +77,7 @@ Schedule::command('bilgi:indeksle')->hourly()->withoutOverlapping();
  *
  * Pazartesi sabahı: hafta içi ilk teklif yazılmadan önce taze olsun.
  */
-Schedule::command('bilgi:siteden')->weeklyOn(1, '05:30')->withoutOverlapping();
+Schedule::command('knowledge:site')->weeklyOn(1, '05:30')->withoutOverlapping();
 
 /*
  * YENİ SÜRÜM VAR MI — HER SABAH.
@@ -86,4 +86,4 @@ Schedule::command('bilgi:siteden')->weeklyOn(1, '05:30')->withoutOverlapping();
  * uyarı görür. Güncellemenin kendisi sunucudan yapılır. Ayarlar →
  * Güncelleme'deki düğme aynı kontrolü hemen yapar.
  */
-Schedule::command('guncelleme:denetle')->dailyAt('06:50');
+Schedule::command('update:check')->dailyAt('06:50');

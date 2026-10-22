@@ -34,7 +34,7 @@ class SettingsTabs
         foreach ($this->catalog->groups() as $key => $group) {
             $tabs[] = [
                 'label' => $group['label'],
-                'url' => route('admin.ayarlar.index', ['grup' => $key]),
+                'url' => route('admin.settings.index', ['group' => $key]),
                 'active' => $key === $current,
             ];
         }
@@ -42,7 +42,7 @@ class SettingsTabs
         if (Gate::allows('viewAny', ApiToken::class)) {
             $tabs[] = [
                 'label' => 'API jetonları',
-                'url' => route('admin.api-jetonlari.index'),
+                'url' => route('admin.api-tokens.index'),
                 'active' => $current === 'api',
             ];
         }
@@ -55,18 +55,18 @@ class SettingsTabs
         if (Gate::allows('admin')) {
             $tabs[] = [
                 'label' => 'Sertifika',
-                'url' => route('admin.sertifika.index'),
-                'active' => $current === 'sertifika',
+                'url' => route('admin.certificate.index'),
+                'active' => $current === 'certificate',
             ];
             $tabs[] = [
                 'label' => 'Veritabanı',
-                'url' => route('admin.veritabani.index'),
-                'active' => $current === 'veritabani',
+                'url' => route('admin.database.index'),
+                'active' => $current === 'database',
             ];
             $tabs[] = [
                 'label' => 'Güncelleme',
-                'url' => route('admin.guncelleme.index'),
-                'active' => $current === 'guncelleme',
+                'url' => route('admin.update.index'),
+                'active' => $current === 'update',
             ];
         }
 

@@ -42,16 +42,16 @@ class ConnectionFileTest extends TestCase
         @rmdir($this->dizin);
     }
 
-    private function dosya(?string $anahtar = null): ConnectionFile
+    private function file(?string $anahtar = null): ConnectionFile
     {
         return new ConnectionFile(new Encrypter($anahtar ?? str_repeat('a', 32), 'AES-256-CBC'), $this->dizin);
     }
 
     public function test_baglanti_sifreli_yazilir_ve_geri_okunur(): void
     {
-        $this->dosya()->baglantiYaz(self::BAGLANTI);
+        $this->file()->writeConnection(self::BAGLANTI);
 
-        $this->assertSame(self::BAGLANTI, $this->dosya()->baglanti());
+        $this->assertSame(self::BAGLANTI, $this->file()->connection());
 
         $ham = (string) file_get_contents($this->dizin.'/connection.json');
         $this->assertStringNotContainsString('w0rd', $ham);
@@ -62,57 +62,57 @@ class ConnectionFileTest extends TestCase
 
     public function test_baska_anahtarla_okunamaz(): void
     {
-        $this->dosya()->baglantiYaz(self::BAGLANTI);
+        $this->file()->writeConnection(self::BAGLANTI);
 
         $this->expectException(RuntimeException::class);
-        $this->dosya(str_repeat('b', 32))->baglanti();
+        $this->file(str_repeat('b', 32))->connection();
     }
 
     public function test_dosya_yoksa_baglanti_yok(): void
     {
-        $this->assertNull($this->dosya()->baglanti());
-        $this->assertNull($this->dosya()->durum());
+        $this->assertNull($this->file()->connection());
+        $this->assertNull($this->file()->status());
     }
 
     /** Başarısızlıkta parola diskte kalmaz: bir daha okunmayacak, ancak sızabilir. */
     public function test_basarisiz_asamasi_baglantiyi_siler(): void
     {
-        $dosya = $this->dosya();
-        $dosya->baglantiYaz(self::BAGLANTI);
-        $dosya->asamaYaz('tasinacak', null, ['hedef' => 'panel_uzak@db.ornek.local:3307/panel', 'isteyen' => 'Yönetici']);
-        $dosya->asamaYaz('basarisiz', 'Uzak veritabanı boş değil.');
+        $dosya = $this->file();
+        $dosya->writeConnection(self::BAGLANTI);
+        $dosya->writeStage('tasinacak', null, ['hedef' => 'panel_uzak@db.ornek.local:3307/panel', 'isteyen' => 'Yönetici']);
+        $dosya->writeStage('basarisiz', 'Uzak veritabanı boş değil.');
 
         $this->assertFileDoesNotExist($this->dizin.'/connection.json');
-        $this->assertSame('basarisiz', $dosya->asama());
-        $this->assertSame('Uzak veritabanı boş değil.', $dosya->durum()['aciklama']);
-        $this->assertSame('Yönetici', $dosya->durum()['isteyen'], 'Önceki alanlar korunmalı.');
+        $this->assertSame('basarisiz', $dosya->stage());
+        $this->assertSame('Uzak veritabanı boş değil.', $dosya->status()['aciklama']);
+        $this->assertSame('Yönetici', $dosya->status()['isteyen'], 'Önceki alanlar korunmalı.');
     }
 
     public function test_yeni_istek_onceki_sonucu_tasimaz(): void
     {
-        $dosya = $this->dosya();
-        $dosya->asamaYaz('basarisiz', 'eski sebep', ['hedef' => 'eski']);
-        $dosya->asamaYaz('tasinacak', null, ['hedef' => 'yeni']);
+        $dosya = $this->file();
+        $dosya->writeStage('basarisiz', 'eski sebep', ['hedef' => 'eski']);
+        $dosya->writeStage('tasinacak', null, ['hedef' => 'yeni']);
 
-        $this->assertArrayNotHasKey('aciklama', $dosya->durum());
-        $this->assertSame('yeni', $dosya->durum()['hedef']);
+        $this->assertArrayNotHasKey('aciklama', $dosya->status());
+        $this->assertSame('yeni', $dosya->status()['hedef']);
     }
 
     public function test_aciklamasiz_ilerleme_onceki_aciklamayi_korur(): void
     {
-        $dosya = $this->dosya();
-        $dosya->asamaYaz('tasinacak');
-        $dosya->asamaYaz('deneniyor', '42 tablo, 900 satır kopyalandı; iki tarafta sayılar aynı.');
-        $dosya->asamaYaz('etkin');
+        $dosya = $this->file();
+        $dosya->writeStage('tasinacak');
+        $dosya->writeStage('deneniyor', '42 tablo, 900 satır kopyalandı; iki tarafta sayılar aynı.');
+        $dosya->writeStage('etkin');
 
-        $this->assertSame('etkin', $dosya->asama());
-        $this->assertSame('42 tablo, 900 satır kopyalandı; iki tarafta sayılar aynı.', $dosya->durum()['aciklama']);
+        $this->assertSame('etkin', $dosya->stage());
+        $this->assertSame('42 tablo, 900 satır kopyalandı; iki tarafta sayılar aynı.', $dosya->status()['aciklama']);
     }
 
     public function test_bilinmeyen_asama_yazilmaz(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->dosya()->asamaYaz('bitti');
+        $this->file()->writeStage('bitti');
     }
 
     public function test_bozuk_durum_dosyasi_yok_sayilir(): void
@@ -120,17 +120,17 @@ class ConnectionFileTest extends TestCase
         mkdir($this->dizin, 0700);
         file_put_contents($this->dizin.'/state.json', '{"durum":"uydurma"}');
 
-        $this->assertNull($this->dosya()->durum());
-        $this->assertNull($this->dosya()->asama());
+        $this->assertNull($this->file()->status());
+        $this->assertNull($this->file()->stage());
     }
 
     /** Başlatıcı satırları base64'ten çözüp ortama alıyor; tırnaklı parola bozulmamalı. */
     public function test_ortam_satirlari_degeri_bozmadan_tasir(): void
     {
-        $this->dosya()->baglantiYaz(self::BAGLANTI);
+        $this->file()->writeConnection(self::BAGLANTI);
 
         $satirlar = [];
-        foreach (array_filter(explode("\n", $this->dosya()->ortamSatirlari())) as $satir) {
+        foreach (array_filter(explode("\n", $this->file()->envLines())) as $satir) {
             [$ad, $deger] = explode('=', $satir, 2);
             $satirlar[$ad] = base64_decode($deger, true);
         }
@@ -146,17 +146,17 @@ class ConnectionFileTest extends TestCase
 
     public function test_istemci_ayari_parolayi_tirnaklar(): void
     {
-        $this->dosya()->baglantiYaz(self::BAGLANTI);
+        $this->file()->writeConnection(self::BAGLANTI);
 
         $this->assertSame(
             "[client]\nhost=\"db.ornek.local\"\nport=3307\nuser=\"panel_uzak\"\npassword=\"p@ss \\\"w0rd\\\" #x \\\\ 'q'\\tson\"\n",
-            $this->dosya()->istemciAyari(),
+            $this->file()->clientConfig(),
         );
     }
 
     public function test_yeniden_baslatma_istegi_dosya_birakir(): void
     {
-        $this->assertTrue($this->dosya()->yenidenBaslatIste());
+        $this->assertTrue($this->file()->requestRestart());
         $this->assertFileExists($this->dizin.'/restart');
     }
 
@@ -164,7 +164,7 @@ class ConnectionFileTest extends TestCase
     {
         $this->assertSame(
             ['host' => 'db', 'port' => 3306, 'database' => 'panel', 'username' => 'u', 'password' => ' p '],
-            ConnectionFile::temizle(['host' => ' db ', 'port' => '', 'database' => 'panel', 'username' => 'u', 'password' => ' p ', 'fazla' => 'x']),
+            ConnectionFile::clear(['host' => ' db ', 'port' => '', 'database' => 'panel', 'username' => 'u', 'password' => ' p ', 'fazla' => 'x']),
         );
     }
 }

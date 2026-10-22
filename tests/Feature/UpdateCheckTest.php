@@ -34,9 +34,9 @@ class UpdateCheckTest extends TestCase
 
         $this->dizin = sys_get_temp_dir().'/guncelleme-'.bin2hex(random_bytes(4));
         config([
-            'update.depo' => 'mustafa-ozen95/ornek',
-            'update.jeton' => self::JETON,
-            'update.surum' => self::CALISAN,
+            'update.repo' => 'mustafa-ozen95/ornek',
+            'update.token' => self::JETON,
+            'update.version' => self::CALISAN,
         ]);
     }
 
@@ -48,7 +48,7 @@ class UpdateCheckTest extends TestCase
         parent::tearDown();
     }
 
-    private function denetim(): UpdateCheck
+    private function audit(): UpdateCheck
     {
         return new UpdateCheck($this->dizin);
     }
@@ -75,10 +75,10 @@ class UpdateCheckTest extends TestCase
 
     public function test_jeton_yoksa_acik_depoya_jetonsuz_sorulur(): void
     {
-        config(['update.jeton' => '']);
+        config(['update.token' => '']);
         $this->sahte(son: self::CALISAN);
 
-        $sonuc = $this->denetim()->denetle('sınama');
+        $sonuc = $this->audit()->check('sınama');
 
         $this->assertSame('guncel', $sonuc['durum']);
         Http::assertSentCount(1);
@@ -87,14 +87,14 @@ class UpdateCheckTest extends TestCase
 
     public function test_jetonsuz_sorulan_ozel_ya_da_olmayan_depo_anlasilir_hata_verir(): void
     {
-        config(['update.jeton' => '']);
+        config(['update.token' => '']);
         $this->sahte(kod: 404, mesaj: 'Not Found');
 
-        $sonuc = $this->denetim()->denetle('sınama');
+        $sonuc = $this->audit()->check('sınama');
 
         $this->assertSame('hata', $sonuc['durum']);
         $this->assertStringContainsString('404', $sonuc['aciklama']);
-        $this->assertStringContainsString('GUNCELLEME_JETONU', $sonuc['aciklama']);
+        $this->assertStringContainsString('UPDATE_TOKEN', $sonuc['aciklama']);
     }
 
     /** Ayrı ref dosyası, packed-refs, bozuk HEAD ve hiç .git olmaması. */
@@ -125,7 +125,7 @@ class UpdateCheckTest extends TestCase
     {
         $this->sahte(son: self::CALISAN);
 
-        $sonuc = $this->denetim()->denetle('sınama');
+        $sonuc = $this->audit()->check('sınama');
 
         $this->assertSame('guncel', $sonuc['durum']);
         Http::assertSentCount(1);
@@ -144,45 +144,45 @@ class UpdateCheckTest extends TestCase
             ],
         ]);
 
-        $denetim = $this->denetim();
-        $sonuc = $denetim->denetle('sınama');
+        $denetim = $this->audit();
+        $sonuc = $denetim->check('sınama');
 
         $this->assertSame('yeni', $sonuc['durum']);
         $this->assertSame(2, $sonuc['geride']);
         $this->assertSame(['Yeni özellik', 'Eski düzeltme'], array_column($sonuc['commitler'], 'baslik'));
-        $this->assertTrue($denetim->yeniVar());
+        $this->assertTrue($denetim->hasNew());
         Http::assertSent(fn (Request $r): bool => str_contains($r->url(), '/compare/'.self::CALISAN.'...'.self::SON));
 
         // Panel güncellendi: eski sonuç yeni sürümü anlatmıyor, uyarı susar.
-        config(['update.surum' => self::SON]);
-        $this->assertFalse($denetim->yeniVar());
+        config(['update.version' => self::SON]);
+        $this->assertFalse($denetim->hasNew());
     }
 
     public function test_ileride_ise_guncelleme_denmez(): void
     {
         $this->sahte(karsilastirma: ['status' => 'behind', 'ahead_by' => 0, 'behind_by' => 3, 'commits' => []]);
 
-        $denetim = $this->denetim();
-        $sonuc = $denetim->denetle('sınama');
+        $denetim = $this->audit();
+        $sonuc = $denetim->check('sınama');
 
         $this->assertSame('ileride', $sonuc['durum']);
         $this->assertStringContainsString('geri almak', $sonuc['aciklama']);
-        $this->assertFalse($denetim->yeniVar());
+        $this->assertFalse($denetim->hasNew());
     }
 
     public function test_ayrisik_dal(): void
     {
         $this->sahte(karsilastirma: ['status' => 'diverged', 'ahead_by' => 1, 'behind_by' => 2, 'commits' => []]);
 
-        $this->assertSame('ayrisik', $this->denetim()->denetle('sınama')['durum']);
+        $this->assertSame('ayrisik', $this->audit()->check('sınama')['durum']);
     }
 
     public function test_calisan_surum_bilinmiyorsa_karsilastirilmaz(): void
     {
-        config(['update.surum' => '']);
+        config(['update.version' => '']);
         $this->sahte();
 
-        $sonuc = $this->denetim()->denetle('sınama');
+        $sonuc = $this->audit()->check('sınama');
 
         $this->assertSame('bilinmiyor', $sonuc['durum']);
         $this->assertSame(self::SON, $sonuc['son']);
@@ -193,7 +193,7 @@ class UpdateCheckTest extends TestCase
     {
         $this->sahte(kod: 401);
 
-        $sonuc = $this->denetim()->denetle('sınama');
+        $sonuc = $this->audit()->check('sınama');
 
         $this->assertSame('hata', $sonuc['durum']);
         $this->assertStringContainsString('401', $sonuc['aciklama']);
@@ -204,10 +204,10 @@ class UpdateCheckTest extends TestCase
     {
         Http::fake(['*' => Http::failedConnection()]);
 
-        $denetim = $this->denetim();
-        $denetim->denetle('sınama');
+        $denetim = $this->audit();
+        $denetim->check('sınama');
 
-        $son = $denetim->son();
+        $son = $denetim->last();
         $this->assertSame('hata', $son['durum']);
         $this->assertStringContainsString('erişilemedi', $son['aciklama']);
         $this->assertSame('sınama', $son['tetikleyen']);
@@ -219,7 +219,7 @@ class UpdateCheckTest extends TestCase
         @mkdir($this->dizin, 0700, true);
         file_put_contents($this->dizin.'/state.json', '{"durum":"bilmem"}');
 
-        $this->assertNull($this->denetim()->son());
-        $this->assertFalse($this->denetim()->yeniVar());
+        $this->assertNull($this->audit()->last());
+        $this->assertFalse($this->audit()->hasNew());
     }
 }

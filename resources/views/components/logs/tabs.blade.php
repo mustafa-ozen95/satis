@@ -15,17 +15,17 @@
 <x-ui.tabs :items="[
     [
         'label' => 'Denetim kayıtları',
-        'url' => route('admin.kayitlar.denetim'),
+        'url' => route('admin.logs.audit'),
         'active' => $aktif === 'denetim',
     ],
     [
         'label' => 'Hata kayıtları',
-        'url' => route('admin.kayitlar.hatalar'),
+        'url' => route('admin.logs.errors'),
         'active' => $aktif === 'hata',
     ],
     [
         'label' => 'İstatistikler',
-        'url' => route('admin.istatistikler.index'),
+        'url' => route('admin.statistics.index'),
         'active' => $aktif === 'istatistik',
     ],
 ]" />

@@ -33,4 +33,4 @@ Thumbs.db
 /sertifika/
 docker-compose.override.yml
 # İmajda derlemede yazılır (docker/Dockerfile); depoya girmez.
-/SURUM
+/VERSION

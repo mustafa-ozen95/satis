@@ -26,10 +26,10 @@ class PriceInlineEditingTest extends TestCase
         $kalem = PriceItem::factory()->create();
 
         $this->actingAs(User::factory()->admin()->create())
-            ->get(route('fiyatlar.index'))
+            ->get(route('prices.index'))
             ->assertOk()
-            ->assertSee('data-alan="price"', false)
-            ->assertSee('data-adres="'.route('fiyatlar.alan', $kalem).'"', false);
+            ->assertSee('data-field="price"', false)
+            ->assertSee('data-url="'.route('prices.field', $kalem).'"', false);
     }
 
     public function test_tek_alan_guncellenir(): void
@@ -37,9 +37,9 @@ class PriceInlineEditingTest extends TestCase
         $kalem = PriceItem::factory()->create(['price' => 100, 'name' => 'Eski ad', 'currency' => 'TL']);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->postJson(route('fiyatlar.alan', $kalem), ['alan' => 'price', 'deger' => '250.50'])
+            ->postJson(route('prices.field', $kalem), ['field' => 'price', 'value' => '250.50'])
             ->assertOk()
-            ->assertJson(['ham' => '250.50', 'gosterim' => '250,5 TL']);
+            ->assertJson(['raw' => '250.50', 'display' => '250,5 TL']);
 
         $this->assertSame('250.50', $kalem->fresh()->price);
 
@@ -52,7 +52,7 @@ class PriceInlineEditingTest extends TestCase
         $kalem = PriceItem::factory()->create(['price' => 100]);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->postJson(route('fiyatlar.alan', $kalem), ['alan' => 'price', 'deger' => '150']);
+            ->postJson(route('prices.field', $kalem), ['field' => 'price', 'value' => '150']);
 
         $satir = ActivityLog::where('tur', 'fiyat_guncelle')->latest('id')->first();
 
@@ -69,7 +69,7 @@ class PriceInlineEditingTest extends TestCase
         $kalem = PriceItem::factory()->create(['aktif' => true]);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->postJson(route('fiyatlar.alan', $kalem), ['alan' => 'aktif', 'deger' => '0'])
+            ->postJson(route('prices.field', $kalem), ['field' => 'aktif', 'value' => '0'])
             ->assertStatus(422);
 
         $this->assertTrue($kalem->fresh()->aktif);
@@ -80,7 +80,7 @@ class PriceInlineEditingTest extends TestCase
         $kalem = PriceItem::factory()->create(['price' => 100]);
 
         $this->actingAs(User::factory()->admin()->create())
-            ->postJson(route('fiyatlar.alan', $kalem), ['alan' => 'price', 'deger' => 'bedava'])
+            ->postJson(route('prices.field', $kalem), ['field' => 'price', 'value' => 'bedava'])
             ->assertStatus(422);
 
         $this->assertSame('100.00', $kalem->fresh()->price);
@@ -91,7 +91,7 @@ class PriceInlineEditingTest extends TestCase
         $kalem = PriceItem::factory()->create(['price' => 100]);
 
         $this->actingAs(User::factory()->create(['perm_fiyat' => false]))
-            ->postJson(route('fiyatlar.alan', $kalem), ['alan' => 'price', 'deger' => '1'])
+            ->postJson(route('prices.field', $kalem), ['field' => 'price', 'value' => '1'])
             ->assertForbidden();
 
         $this->assertSame('100.00', $kalem->fresh()->price);

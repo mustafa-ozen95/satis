@@ -17,10 +17,10 @@
 #  (bilgi bankasının vektör deposu).
 #
 #  Dışarıdaki ya da platformun yönettiği bir veritabanı: DB_HOST ve
-#  kimlik bilgilerini verin, VT_KOPYA=0 ile db servisi hiç kalkmaz.
+#  kimlik bilgilerini verin, DB_REPLICAS=0 ile db servisi hiç kalkmaz.
 #
-#  Adlar: konteyner ve hacimler ONEK ile başlar (varsayılan satis). Chroma
-#  bunun dışında: adı ve hacmi ayrı ayardır (CHROMA_KONTEYNERI, CHROMA_HACMI);
+#  Adlar: konteyner ve hacimler STACK_PREFIX ile başlar (varsayılan satis). Chroma
+#  bunun dışında: adı ve hacmi ayrı ayardır (CHROMA_CONTAINER, CHROMA_VOLUME);
 #  mevcut bir hacmi kullanmak için onlar verilir. Aynı sunucuda ikinci
 #  kurulum üçünü de değiştirir.
 # =============================================================================
@@ -30,8 +30,8 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    image: ${ONEK:-satis}:yerel
-    container_name: ${ONEK:-satis}
+    image: ${STACK_PREFIX:-satis}:local
+    container_name: ${STACK_PREFIX:-satis}
     restart: unless-stopped
     # Kapanış NE KADAR SÜRÜYORSA o kadar beklenir; buradaki değer bir hedef
     # değil, asla devreye girmemesi gereken bir TAVANDIR. Docker'ın varsayılanı
@@ -61,27 +61,27 @@ services:
       - REDIS_PASSWORD
       - GEMINI_API_KEY
       - GEMINI_MODEL
-      - GEMINI_YEDEK_MODEL
+      - GEMINI_FALLBACK_MODEL
       - GEMINI_EMBED_MODEL
       - GROQ_API_KEY
       - GROQ_MODEL
       - CHROMA_URL
-      - KIMLIK_ACIK
-      - KIMLIK_ADRES
-      - KIMLIK_ISTEMCI
-      - KIMLIK_ISTEMCI_SIR
-      - KIMLIK_DONUS
-      - KIMLIK_BILDIRIM_SIR
-      - KIMLIK_AD
-      - KIMLIK_KOK
-      - TEMA_ALANI
-      - DENETIM_ANAHTARI
-      - GUNCELLEME_JETONU
+      - IDENTITY_ENABLED
+      - IDENTITY_URL
+      - IDENTITY_CLIENT_ID
+      - IDENTITY_CLIENT_SECRET
+      - IDENTITY_REDIRECT_URI
+      - IDENTITY_NOTIFY_SECRET
+      - IDENTITY_NAME
+      - IDENTITY_CA_CERT
+      - THEME_COOKIE_DOMAIN
+      - AUDIT_KEY
+      - UPDATE_TOKEN
       - PANEL_EMAIL
       - PANEL_PASSWORD
-      - PANEL_AD
-      - SIRKET_ADI
-      - SIRKET_SITESI
+      - PANEL_NAME
+      - COMPANY_NAME
+      - COMPANY_WEBSITE
       - MAIL_MAILER
       - MAIL_HOST
       - MAIL_PORT
@@ -112,11 +112,11 @@ services:
 
   db:
     image: mariadb:11.4
-    container_name: ${ONEK:-satis}-db
+    container_name: ${STACK_PREFIX:-satis}-db
     restart: unless-stopped
     # 0: dışarıdaki ya da platformun veritabanı kullanılıyor (DB_HOST).
     deploy:
-      replicas: ${VT_KOPYA:-1}
+      replicas: ${DB_REPLICAS:-1}
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     environment:
       MARIADB_DATABASE: ${DB_DATABASE:-satis}
@@ -135,7 +135,7 @@ services:
 
   redis:
     image: redis:7.4-alpine
-    container_name: ${ONEK:-satis}-redis
+    container_name: ${STACK_PREFIX:-satis}-redis
     restart: unless-stopped
     # Kalıcılık KAPALI: burada yalnız önbellek, oturum ve kuyruk durur.
     # Kuyruktaki teklif işi de yeniden başlatmayı atlatmak zorunda değil:
@@ -167,10 +167,10 @@ services:
     # ve .dev etiketleri). Etiketsiz bırakmak her kurulumda başka bir latest
     # demekti. Yükseltme bilerek yapılır: özet değişir, veri dizini sınanır.
     image: chromadb/chroma@sha256:1e0b73a187a28757c572acba508c46f48c9e8b0acaf5c20e6d95cdedce1acdf6
-    # Ad ve hacim ONEK'e bağlı DEĞİL: mevcut bir hacmi kullanmak için
-    # CHROMA_HACMI verilir. Yanlış hacim, bilgi bankasının boş açılması
+    # Ad ve hacim STACK_PREFIX'e bağlı DEĞİL: mevcut bir hacmi kullanmak için
+    # CHROMA_VOLUME verilir. Yanlış hacim, bilgi bankasının boş açılması
     # demek olurdu.
-    container_name: ${CHROMA_KONTEYNERI:-satis-chroma}
+    container_name: ${CHROMA_CONTAINER:-satis-chroma}
     restart: unless-stopped
     volumes:
       - chroma:/data
@@ -180,14 +180,14 @@ networks:
     # Ağ yalıtımı: true iken konteynerler kimlik merkezine, LLM servislerine
     # (Gemini, Groq) ve dışarıya bağlanamaz; dış dünyadan ayrık bir deneme
     # kurulumu için. Port yayınları da o zaman dışarıdan erişilmez.
-    internal: ${AG_YALITIMI:-false}
+    internal: ${NETWORK_ISOLATED:-false}
 
 volumes:
   storage:
-    name: ${ONEK:-satis}_storage
+    name: ${STACK_PREFIX:-satis}_storage
   logs:
-    name: ${ONEK:-satis}_logs
+    name: ${STACK_PREFIX:-satis}_logs
   database:
-    name: ${ONEK:-satis}_database
+    name: ${STACK_PREFIX:-satis}_database
   chroma:
-    name: ${CHROMA_HACMI:-satis-chroma-data}
+    name: ${CHROMA_VOLUME:-satis-chroma-data}

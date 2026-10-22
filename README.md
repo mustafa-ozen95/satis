@@ -53,7 +53,7 @@ the documentation page is generated from the routes.
 Every meaningful action is recorded and the rows are chained with HMAC-SHA256:
 anyone who later changes or deletes a row breaks the chain.
 
-    php artisan denetim:dogrula
+    php artisan audit:verify
 
 
 ## Installation
@@ -68,7 +68,7 @@ same file on every platform). Details and variables: `docker/README.md`,
     docker compose exec panel supervisorctl status         # services
 
 No company name, website or business rule lives in the repository: the company
-name and site come from the environment (`SIRKET_ADI`, `SIRKET_SITESI`), a
+name and site come from the environment (`COMPANY_NAME`, `COMPANY_WEBSITE`), a
 company-specific quotation prompt and the site pages to import are optional
 files under `storage/app/company/` (see `docker/README.md`). Without them the
 panel uses a generic prompt and skips the site import.
@@ -78,8 +78,8 @@ panel uses a generic prompt and skips the site import.
 
 | | |
 |---|---|
-| `php artisan kimlik:esitle` | applies access changes from the center (scheduler: nightly at 04:10) |
-| `php artisan denetim:dogrula` | verifies the audit chain (scheduler: 03:30) |
+| `php artisan identity:sync` | applies access changes from the center (scheduler: nightly at 04:10) |
+| `php artisan audit:verify` | verifies the audit chain (scheduler: 03:30) |
 | `php artisan queue:work` | quotation generation (supervisord runs it in the container) |
 
 

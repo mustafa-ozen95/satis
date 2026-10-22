@@ -18,7 +18,7 @@ use Throwable;
 /**
  * Güncelleme kontrolü: çalışan sürüm ve GitHub'daki son başarılı derleme.
  *
- * Yalnızca BAKAR. Kontrol her sabah kendiliğinden yapılır (guncelleme:denetle);
+ * Yalnızca BAKAR. Kontrol her sabah kendiliğinden yapılır (update:check);
  * düğme aynı kontrolü hemen yapar. Güncellemenin kendisi sunucudan yapılır.
  *
  * Yetkilendirme: HasMiddleware ile `can:admin`.
@@ -48,23 +48,23 @@ class UpdateController extends Controller implements HasMiddleware
 
     public function index(): View
     {
-        $son = $this->denetim->son();
-        $calisan = $this->denetim->surum();
+        $son = $this->denetim->last();
+        $calisan = $this->denetim->version();
 
         return view('settings.update', [
-            'sections' => $this->sekmeler->all('guncelleme'),
-            'depo' => $this->denetim->depo(),
+            'sections' => $this->sekmeler->all('update'),
+            'depo' => $this->denetim->repo(),
             'calisan' => $calisan,
             'calisanKisa' => $calisan === null ? 'bilinmiyor' : substr($calisan, 0, 7),
             'son' => $son === null ? null : [
                 ...$son,
-                'zaman' => self::zaman($son['zaman'] ?? null),
+                'zaman' => self::formatTime($son['zaman'] ?? null),
                 'son_kisa' => substr((string) ($son['son'] ?? ''), 0, 7),
-                'son_tarih' => self::zaman($son['son_tarih'] ?? null),
+                'son_tarih' => self::formatTime($son['son_tarih'] ?? null),
                 'commitler' => array_map(fn (array $c): array => [
                     ...$c,
                     'kisa' => substr((string) $c['sha'], 0, 7),
-                    'tarih' => self::zaman($c['tarih'] ?? null),
+                    'tarih' => self::formatTime($c['tarih'] ?? null),
                 ], $son['commitler'] ?? []),
                 // Listede gösterilmeyen yeni commit sayısı ("ve N commit daha").
                 'daha' => max(0, (int) ($son['geride'] ?? 0) - count($son['commitler'] ?? [])),
@@ -75,9 +75,9 @@ class UpdateController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function denetle(Request $istek): RedirectResponse
+    public function check(Request $istek): RedirectResponse
     {
-        $sonuc = $this->denetim->denetle((string) $istek->user()->name);
+        $sonuc = $this->denetim->check((string) $istek->user()->name);
 
         return back()->with($sonuc['durum'] === 'hata' ? 'error' : 'status', match ($sonuc['durum']) {
             'guncel' => 'Kontrol edildi: panel son sürümde.',
@@ -87,7 +87,7 @@ class UpdateController extends Controller implements HasMiddleware
         });
     }
 
-    private static function zaman(?string $iso): ?string
+    private static function formatTime(?string $iso): ?string
     {
         try {
             return $iso === null ? null : Carbon::parse($iso)->setTimezone(config('app.timezone'))->format('d.m.Y H:i');

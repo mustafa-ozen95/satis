@@ -45,7 +45,7 @@ class IdentitySyncer
      *
      * @return array{sorulan: int, kapatilan: int, acilan: int}
      */
-    public function esitle(): array
+    public function sync(): array
     {
         $baglar = UserIdentity::with('user')
             ->where('provider', AccountMatcher::SAGLAYICI)
@@ -58,7 +58,7 @@ class IdentitySyncer
             return $sayac;
         }
 
-        $durumlar = $this->merkez->kimlikDurumlari($baglar->pluck('subject')->all());
+        $durumlar = $this->merkez->identityStatuses($baglar->pluck('subject')->all());
 
         foreach ($baglar as $bag) {
             /*
@@ -72,7 +72,7 @@ class IdentitySyncer
                 continue;
             }
 
-            $sonuc = $this->uygula($bag->user, (array) $durumlar[$bag->subject]);
+            $sonuc = $this->apply($bag->user, (array) $durumlar[$bag->subject]);
 
             $sayac['kapatilan'] += (int) $sonuc['kapatildi'];
             $sayac['acilan'] += (int) $sonuc['acildi'];
@@ -87,10 +87,10 @@ class IdentitySyncer
      * MERKEZ HER İKİ YÖNDE DE EZER. Yalnızca kapatsaydı, merkezde geri açılan
      * hesap burada kapalı kalır ve kimse hangisinin doğru olduğunu bilemezdi.
      *
-     * @param  array{durum?: string, girebilir?: bool, rol?: ?string}  $durum
+     * @param  array{status?: string, can_enter?: bool, role?: ?string}  $durum
      * @return array{kapatildi: bool, acildi: bool}
      */
-    public function uygula(User $kullanici, array $durum): array
+    public function apply(User $kullanici, array $durum): array
     {
         /*
          * "GİREBİLİR" SORAN UYGULAMAYA GÖREDİR.
@@ -100,7 +100,7 @@ class IdentitySyncer
          * (bkz. merkezdeki KimlikDurumuController). Panelin ayrıca kendi rol
          * listesini tutmasına gerek yok.
          */
-        $girebilir = (bool) ($durum['girebilir'] ?? false);
+        $girebilir = (bool) ($durum['can_enter'] ?? false);
 
         /*
          * ROL HER DURUMDA eşitlenir — kapalı hesabınki de.
@@ -109,15 +109,15 @@ class IdentitySyncer
          * Slug'lar kardeş panellerde de aynı: merkezdeki rol burada da aynı
          * slug'la görünmeli. Bu, kimliğin kendisidir; yetki ayrı.
          */
-        $this->roluGuncelle($kullanici, $durum['rol'] ?? null);
+        $this->updateRole($kullanici, $durum['role'] ?? null);
 
         if (! $girebilir && $kullanici->aktif) {
             $kullanici->forceFill(['aktif' => false])->save();
 
             Log::info('Merkezde erişimi kalktı, hesap kapatıldı.', [
                 'kullanici' => $kullanici->email,
-                'merkezdeki_durum' => (string) ($durum['durum'] ?? 'bilinmiyor'),
-                'merkezdeki_rol' => (string) ($durum['rol'] ?? 'rolsüz'),
+                'merkezdeki_durum' => (string) ($durum['status'] ?? 'bilinmiyor'),
+                'merkezdeki_rol' => (string) ($durum['role'] ?? 'rolsüz'),
             ]);
 
             return ['kapatildi' => true, 'acildi' => false];
@@ -149,7 +149,7 @@ class IdentitySyncer
      * merkezde rol dağıtabilen biri, buradaki hiçbir yöneticinin haberi
      * olmadan kendini burada da yönetici yapamamalı.
      */
-    private function roluGuncelle(User $kullanici, ?string $slug): void
+    private function updateRole(User $kullanici, ?string $slug): void
     {
         if (blank($slug)) {
             return;
@@ -173,7 +173,7 @@ class IdentitySyncer
             return;
         }
 
-        if ($rol->yonetici && ! config('identity.yonetici_devri')) {
+        if ($rol->yonetici && ! config('identity.admin_takeover')) {
             return;
         }
 

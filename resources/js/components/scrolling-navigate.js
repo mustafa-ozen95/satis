@@ -1,4 +1,4 @@
-import { git } from './navigation.js';
+import { go } from './navigation.js';
 
 /**
  * Telefonda parmakla bölüm değiştirme.
@@ -22,7 +22,7 @@ import { git } from './navigation.js';
  */
 
 /** Bölüm değişmesi için gereken yatay yol. */
-const ESIK = 70;
+const THRESHOLD = 70;
 
 /**
  * Dikey kaçış toleransı.
@@ -31,12 +31,12 @@ const ESIK = 70;
  * bileşen her jestte var. Dikey yol yataydan büyükse bu bir kaydırmadır,
  * bölüm değiştirme değil.
  */
-const DIKEY_PAY = 1.0;
+const VERTICAL_MARGIN = 1.0;
 
 /** Uzun basıp sürüklemeler (metin seçimi, sürükle-bırak) sayılmaz. */
-const AZAMI_SURE = 800;
+const MAX_DURATION = 800;
 
-let baslangic = null;
+let start = null;
 
 /**
  * Parmağın altındaki kutulardan biri o yöne kayabiliyor mu?
@@ -44,18 +44,18 @@ let baslangic = null;
  * @param {Element} hedef
  * @param {number} yon  -1 sola (sonraki), +1 sağa (önceki)
  */
-function kendiKayabilir(hedef, yon) {
-    let el = hedef instanceof Element ? hedef : null;
+function canScrollItself(destination, direction) {
+    let el = destination instanceof Element ? destination : null;
 
     while (el && el !== document.body) {
-        const stil = getComputedStyle(el);
+        const style = getComputedStyle(el);
 
-        if (/(auto|scroll)/.test(stil.overflowX) && el.scrollWidth > el.clientWidth + 1) {
-            const kalan = yon < 0
+        if (/(auto|scroll)/.test(style.overflowX) && el.scrollWidth > el.clientWidth + 1) {
+            const remaining = direction < 0
                 ? el.scrollWidth - el.clientWidth - el.scrollLeft
                 : el.scrollLeft;
 
-            if (kalan > 1) {
+            if (remaining > 1) {
                 return true;
             }
         }
@@ -67,69 +67,69 @@ function kendiKayabilir(hedef, yon) {
 }
 
 /** Menüdeki bölümler ve şu an hangisindeyiz. */
-function bolumler() {
-    const baglantilar = [...document.querySelectorAll('.topbar__nav .topbar__link')];
-    const sira = baglantilar.findIndex((a) => a.getAttribute('aria-current') === 'page');
+function menuSections() {
+    const links = [...document.querySelectorAll('.topbar__nav .topbar__link')];
+    const order = links.findIndex((a) => a.getAttribute('aria-current') === 'page');
 
-    return { baglantilar, sira };
+    return { links, order };
 }
 
-function gecis(yon) {
-    const { baglantilar, sira } = bolumler();
+function transition(direction) {
+    const { links, order } = menuSections();
 
-    if (baglantilar.length === 0 || sira === -1) {
+    if (links.length === 0 || order === -1) {
         return;
     }
 
     /* Uçlarda dönülmez: son bölümden sonrası yok, ilk bölümden öncesi de. */
-    const hedef = baglantilar[sira + (yon < 0 ? 1 : -1)];
+    const destination = links[order + (direction < 0 ? 1 : -1)];
 
-    if (hedef) {
-        git(hedef.href);
+    if (destination) {
+        go(destination.href);
     }
 }
 
 export function init() {
-    document.addEventListener('touchstart', (olay) => {
-        if (olay.touches.length !== 1) {
-            baslangic = null;
+    document.addEventListener('touchstart', (event) => {
+        if (event.touches.length !== 1) {
+            start = null;
 
             return;
         }
 
-        const dokunus = olay.touches[0];
+        const touch = event.touches[0];
 
-        baslangic = {
-            x: dokunus.clientX,
-            y: dokunus.clientY,
-            an: Date.now(),
-            hedef: olay.target,
+        start = {
+            x: touch.clientX,
+            y: touch.clientY,
+            time: Date.now(),
+            destination: event.target,
         };
     }, { passive: true });
 
-    document.addEventListener('touchend', (olay) => {
-        if (baslangic === null || olay.changedTouches.length !== 1) {
+    document.addEventListener('touchend', (event) => {
+        if (start === null || event.changedTouches.length !== 1) {
             return;
         }
 
-        const dokunus = olay.changedTouches[0];
-        const dx = dokunus.clientX - baslangic.x;
-        const dy = dokunus.clientY - baslangic.y;
-        const sure = Date.now() - baslangic.an;
-        const bas = baslangic;
+        const touch = event.changedTouches[0];
+        const dx = touch.clientX - start.x;
+        const dy = touch.clientY - start.y;
+        const elapsed = Date.now() - start.time;
+        const begin = start;
 
-        baslangic = null;
+        start = null;
 
-        if (sure > AZAMI_SURE || Math.abs(dx) < ESIK || Math.abs(dx) < Math.abs(dy) * DIKEY_PAY) {
+        if (elapsed > MAX_DURATION || Math.abs(dx) < THRESHOLD || Math.abs(dx) < Math.abs(dy) * VERTICAL_MARGIN) {
             return;
         }
 
-        const yon = dx < 0 ? -1 : 1;
+        const direction = dx < 0 ? -1 : 1;
 
-        if (kendiKayabilir(bas.hedef, yon)) {
+        if (canScrollItself(begin.destination, direction)) {
             return;
         }
 
-        gecis(yon);
+        transition(direction);
     }, { passive: true });
 }

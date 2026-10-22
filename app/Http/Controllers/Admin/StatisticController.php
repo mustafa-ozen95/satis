@@ -30,11 +30,11 @@ class StatisticController extends Controller
             'istatistik' => [
                 'kullanici_sayisi' => User::count(),
                 'aktif_kullanici_sayisi' => User::where('aktif', true)->count(),
-                'fiyat_sayisi' => PriceItem::aktif()->count(),
+                'fiyat_sayisi' => PriceItem::active()->count(),
                 'bilgi_sayisi' => $bilgiSayisi,
                 'konusma_sayisi' => Conversation::count(),
             ],
-            'kullaniciAktivite' => $this->kullaniciAktivite(),
+            'kullaniciAktivite' => $this->userActivity(),
         ]);
     }
 
@@ -42,7 +42,7 @@ class StatisticController extends Controller
      * "X kişisi 2 teklif yazdı, 3 fiyat kalemi ekledi" özeti - yalnızca en az
      * bir aktivitesi olan kullanıcılar, toplam aktiviteye göre azalan sırada.
      */
-    protected function kullaniciAktivite(): Collection
+    protected function userActivity(): Collection
     {
         return User::query()
             ->withCount([

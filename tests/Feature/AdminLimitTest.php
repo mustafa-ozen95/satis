@@ -22,13 +22,13 @@ class AdminLimitTest extends TestCase
     public function test_yonetici_olmayan_kullanici_acamaz(): void
     {
         $this->actingAs(User::factory()->create())
-            ->post(route('admin.kullanicilar.store'), [
+            ->post(route('admin.users.store'), [
                 'ad' => 'Yeni Kişi',
                 'eposta' => 'yeni@ornek.test',
                 'sifre' => 'uzun-parola',
                 'rol' => 'admin',
             ])
-            ->assertRedirect(route('yetkisiz'));
+            ->assertRedirect(route('unauthorized'));
 
         $this->assertDatabaseMissing('users', ['email' => 'yeni@ornek.test']);
     }
@@ -38,14 +38,14 @@ class AdminLimitTest extends TestCase
         $hedef = User::factory()->create(['perm_fiyat' => false]);
 
         $this->actingAs(User::factory()->create())
-            ->post(route('admin.kullanicilar.update', $hedef), [
+            ->post(route('admin.users.update', $hedef), [
                 'ad' => $hedef->name,
                 'eposta' => $hedef->email,
                 'rol' => 'admin',
                 'aktif' => '1',
                 'perm_fiyat' => '1',
             ])
-            ->assertRedirect(route('yetkisiz'));
+            ->assertRedirect(route('unauthorized'));
 
         $this->assertFalse($hedef->fresh()->perm_fiyat);
         $this->assertNull($hedef->fresh()->rol_id, 'rol değişmemeli');
@@ -58,7 +58,7 @@ class AdminLimitTest extends TestCase
          * yerde: config/panel.php.
          */
         $this->actingAs(User::factory()->admin()->create())
-            ->post(route('admin.kullanicilar.store'), [
+            ->post(route('admin.users.store'), [
                 'ad' => 'Kısa Parola',
                 'eposta' => 'kisa@ornek.test',
                 'sifre' => '1234',
@@ -72,14 +72,14 @@ class AdminLimitTest extends TestCase
     public function test_yonetici_kullanici_acabilir(): void
     {
         $this->actingAs(User::factory()->admin()->create())
-            ->post(route('admin.kullanicilar.store'), [
+            ->post(route('admin.users.store'), [
                 'ad' => 'Yeni Kişi',
                 'eposta' => 'yeni@ornek.test',
                 'sifre' => 'yeterince-uzun',
                 'rol' => 'teknik',
                 'perm_teklif' => '1',
             ])
-            ->assertRedirect(route('admin.kullanicilar.index'));
+            ->assertRedirect(route('admin.users.index'));
 
         $this->assertDatabaseHas('users', ['email' => 'yeni@ornek.test']);
     }

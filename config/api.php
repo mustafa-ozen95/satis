@@ -71,7 +71,7 @@ return [
     |
     */
     'endpoints' => [
-        'fiyatlar.index' => [
+        'prices.index' => [
             'summary' => 'Fiyat kalemleri',
             'ability' => 'fiyat:view',
             'description' => 'Aktif fiyat kalemleri. Sayfalıdır; kategori ve arama ile süzülür.',
@@ -82,13 +82,13 @@ return [
             ],
         ],
 
-        'fiyatlar.show' => [
+        'prices.show' => [
             'summary' => 'Tek fiyat kalemi',
             'ability' => 'fiyat:view',
             'description' => 'Bir kalemin tüm alanları.',
         ],
 
-        'bilgi.index' => [
+        'knowledge.index' => [
             'summary' => 'Bilgi bankası',
             'ability' => 'bilgi:view',
             'description' => 'Teklif yazarken kullanılan kurum bilgisi kayıtları.',
@@ -99,17 +99,17 @@ return [
             ],
         ],
 
-        'teklif.store' => [
+        'quotes.store' => [
             'summary' => 'Teklif iste',
             'ability' => 'teklif:create',
             'description' => 'Müşteri talebini kuyruğa alır ve konuşma kimliğini döndürür. '
-                .'Metin HAZIR DEĞİLDİR: durumu teklif.show ile sorulur.',
+                .'Metin HAZIR DEĞİLDİR: durumu api.v1.quotes.show ile sorulur.',
             'parameters' => [
                 'talep' => 'gövdede: müşterinin isteği (zorunlu, en çok 4000 karakter)',
             ],
         ],
 
-        'teklif.show' => [
+        'quotes.show' => [
             'summary' => 'Teklif durumu',
             'ability' => 'teklif:view',
             'description' => 'Konuşmanın durumu (bekliyor/hazir/hata) ve hazırsa üretilen metin.',

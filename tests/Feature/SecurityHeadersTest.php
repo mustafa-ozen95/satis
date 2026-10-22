@@ -59,7 +59,7 @@ class SecurityHeadersTest extends TestCase
 
     public function test_oturumlu_sayfa_diske_yazilmaz(): void
     {
-        $yanit = $this->actingAs(User::factory()->create())->get(route('teklif.create'));
+        $yanit = $this->actingAs(User::factory()->create())->get(route('quote.create'));
 
         $yanit->assertOk();
         $this->assertStringContainsString(

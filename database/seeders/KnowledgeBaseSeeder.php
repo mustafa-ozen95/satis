@@ -14,7 +14,7 @@ use Illuminate\Database\Seeder;
  * Bankası ekranı) yönetilir. Buradaki kayıtlar yalnız ÖRNEK.
  *
  * KAYIT VERİTABANINA YAZILIR, indeks ondan türetilir: Chroma ya da Gemini o
- * an erişilemezse kayıtlar yine durur ve `bilgi:indeksle` indeksi sonradan
+ * an erişilemezse kayıtlar yine durur ve `knowledge:index` indeksi sonradan
  * kurar.
  */
 class KnowledgeBaseSeeder extends Seeder

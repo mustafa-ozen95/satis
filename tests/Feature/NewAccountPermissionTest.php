@@ -25,7 +25,7 @@ class NewAccountPermissionTest extends TestCase
 
     public function test_acilan_hesap_yalnizca_teklif_yetkisi_alir(): void
     {
-        $kullanici = app(AccountOpener::class)->ac([
+        $kullanici = app(AccountOpener::class)->open([
             'sub' => 'merkez-01',
             'email' => 'yeni@ornek.test',
             'name' => 'Yeni Kişi',
@@ -47,11 +47,11 @@ class NewAccountPermissionTest extends TestCase
             'perm_fiyat' => false,
         ]);
 
-        $this->actingAs($kullanici)->get(route('bilgi-bankasi.index'))->assertRedirect();
-        $this->actingAs($kullanici)->get(route('fiyatlar.index'))->assertRedirect();
+        $this->actingAs($kullanici)->get(route('knowledge-base.index'))->assertRedirect();
+        $this->actingAs($kullanici)->get(route('prices.index'))->assertRedirect();
 
         /* Teklif ekranı açık kalır: panelin asıl işi bu. */
-        $this->actingAs($kullanici)->get(route('teklif.create'))->assertOk();
+        $this->actingAs($kullanici)->get(route('quote.create'))->assertOk();
     }
 
     /** Yönetici her şeyi görür; yetki bayraklarına bakılmaz. */
@@ -62,6 +62,6 @@ class NewAccountPermissionTest extends TestCase
             'perm_fiyat' => false,
         ]);
 
-        $this->actingAs($yonetici)->get(route('fiyatlar.index'))->assertOk();
+        $this->actingAs($yonetici)->get(route('prices.index'))->assertOk();
     }
 }

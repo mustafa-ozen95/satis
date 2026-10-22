@@ -29,7 +29,7 @@ class ConversationPolicyTest extends TestCase
         $owner = User::factory()->create();
         $conversation = $this->makeConversation($owner);
 
-        $response = $this->actingAs($owner)->get(route('teklif.show', $conversation));
+        $response = $this->actingAs($owner)->get(route('quote.show', $conversation));
 
         $response->assertOk();
     }
@@ -40,9 +40,9 @@ class ConversationPolicyTest extends TestCase
         $other = User::factory()->create();
         $conversation = $this->makeConversation($owner);
 
-        $response = $this->actingAs($other)->get(route('teklif.show', $conversation));
+        $response = $this->actingAs($other)->get(route('quote.show', $conversation));
 
-        $response->assertRedirect(route('yetkisiz'));
+        $response->assertRedirect(route('unauthorized'));
     }
 
     public function test_admin_can_view_any_conversation(): void
@@ -51,7 +51,7 @@ class ConversationPolicyTest extends TestCase
         $admin = User::factory()->admin()->create();
         $conversation = $this->makeConversation($owner);
 
-        $response = $this->actingAs($admin)->get(route('teklif.show', $conversation));
+        $response = $this->actingAs($admin)->get(route('quote.show', $conversation));
 
         $response->assertOk();
     }
@@ -61,7 +61,7 @@ class ConversationPolicyTest extends TestCase
         $owner = User::factory()->create();
         $conversation = $this->makeConversation($owner);
 
-        $response = $this->get(route('teklif.show', $conversation));
+        $response = $this->get(route('quote.show', $conversation));
 
         $response->assertRedirect(route('login'));
     }

@@ -25,43 +25,43 @@ import { on } from '../lib/dom.js';
 const COOKIE = 'dc-tema';
 
 /** Çerez ömrü: bir yıl. Tema tercihidir, oturumla birlikte unutulmamalı. */
-const OMUR = 60 * 60 * 24 * 365;
+const MAX_AGE = 60 * 60 * 24 * 365;
 
-const isik = () => window.matchMedia('(prefers-color-scheme: light)');
+const light = () => window.matchMedia('(prefers-color-scheme: light)');
 
-function alanAdi() {
+function fieldName() {
     return document.querySelector('meta[name="tema-alan"]')?.content?.trim() ?? '';
 }
 
-function oku() {
-    const eslesme = document.cookie.match(/(?:^|;\s*)dc-tema=(light|dark)(?:;|$)/);
+function read() {
+    const matchResult = document.cookie.match(/(?:^|;\s*)dc-tema=(light|dark)(?:;|$)/);
 
-    return eslesme ? eslesme[1] : null;
+    return matchResult ? matchResult[1] : null;
 }
 
-function yaz(tema) {
-    const alan = alanAdi();
-    const guvenli = window.location.protocol === 'https:' ? '; Secure' : '';
+function write(themeName) {
+    const field = fieldName();
+    const safe = window.location.protocol === 'https:' ? '; Secure' : '';
 
-    document.cookie = `${COOKIE}=${tema}; Path=/; Max-Age=${OMUR}; SameSite=Lax${guvenli}`
-        + (alan === '' ? '' : `; Domain=${alan}`);
+    document.cookie = `${COOKIE}=${themeName}; Path=/; Max-Age=${MAX_AGE}; SameSite=Lax${safe}`
+        + (field === '' ? '' : `; Domain=${field}`);
 }
 
-function uygula(tema) {
-    document.documentElement.dataset.theme = tema;
+function apply(themeName) {
+    document.documentElement.dataset.theme = themeName;
 }
 
 /** Seçim yoksa tarayıcının tercihi. */
-function tarayicininTercihi() {
-    return isik().matches ? 'light' : 'dark';
+function browserPreference() {
+    return light().matches ? 'light' : 'dark';
 }
 
 export function preferred() {
-    return oku() ?? tarayicininTercihi();
+    return read() ?? browserPreference();
 }
 
 export function init() {
-    uygula(preferred());
+    apply(preferred());
 
     /*
      * Tarayıcı tercihi değişirse ANINDA takip edilir — ama yalnızca kullanıcı
@@ -69,9 +69,9 @@ export function init() {
      * karanlık moda geçti diye kullanıcının açık tema tercihini ezmek, seçimi
      * anlamsız kılardı.
      */
-    isik().addEventListener('change', () => {
-        if (oku() === null) {
-            uygula(tarayicininTercihi());
+    light().addEventListener('change', () => {
+        if (read() === null) {
+            apply(browserPreference());
         }
     });
 
@@ -80,9 +80,9 @@ export function init() {
      * Doğrudan bağlansaydı ilk geçişten sonra tema düğmesi ölürdü.
      */
     on('click', '[data-theme-toggle]', () => {
-        const yeni = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        const fresh = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
 
-        yaz(yeni);
-        uygula(yeni);
+        write(fresh);
+        apply(fresh);
     });
 }

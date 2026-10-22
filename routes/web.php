@@ -31,56 +31,56 @@ Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
  * Parola bu panele hiç uğramaz; kullanıcı merkezin sayfasında giriş yapar.
  * Kapalı kurulumda iki uç da 404 döner (bkz. CenterLoginController).
  */
-Route::get('/giris/merkez', [CenterLoginController::class, 'baslat'])->name('kimlik.giris');
-Route::get('/giris/merkez/geri', [CenterLoginController::class, 'geri'])->name('kimlik.donus');
+Route::get('/login/center', [CenterLoginController::class, 'start'])->name('identity.login');
+Route::get('/login/center/callback', [CenterLoginController::class, 'callback'])->name('identity.callback');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/yetkisiz', [AuthController::class, 'yetkisiz'])->name('yetkisiz');
+    Route::get('/unauthorized', [AuthController::class, 'unauthorized'])->name('unauthorized');
 
-    Route::get('/profilim', [ProfileController::class, 'show'])->name('profil.show');
-    Route::post('/profilim/ad', [ProfileController::class, 'adGuncelle'])->name('profil.ad');
-    Route::post('/profilim/sifre', [ProfileController::class, 'sifreGuncelle'])->name('profil.sifre');
-    Route::post('/profilim/yetki-talebi', [ProfileController::class, 'yetkiTalebiGonder'])->name('profil.yetki-talebi');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::post('/profile/name', [ProfileController::class, 'updateName'])->name('profile.name');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::post('/profile/permission-request', [ProfileController::class, 'submitPermissionRequest'])->name('profile.permission-request');
 
-    Route::get('/', [ConversationController::class, 'index'])->name('teklif.create');
-    Route::post('/teklif-olustur', [ConversationController::class, 'store'])->name('teklif.store');
+    Route::get('/', [ConversationController::class, 'index'])->name('quote.create');
+    Route::post('/quote-create', [ConversationController::class, 'store'])->name('quote.store');
     /*
      * "Devamını gör" — listenin sonraki on beşi. HTML parçası döner; satırın
      * biçimi tek yerde kalsın diye (bkz. quote/partials/satirlar).
      */
-    Route::get('/tekliflerim/daha', [ConversationController::class, 'daha'])->name('teklif.daha');
+    Route::get('/quotes/more', [ConversationController::class, 'more'])->name('quote.more');
 
-    Route::post('/tekliflerim/toplu-sil', [ConversationController::class, 'bulkDestroy'])->name('teklif.bulk-destroy');
-    Route::get('/teklif/{conversation}', [ConversationController::class, 'show'])->name('teklif.show');
-    Route::post('/teklif/{conversation}/mesaj', [ConversationController::class, 'reply'])->name('teklif.reply');
-    Route::post('/teklif/{conversation}/sil', [ConversationController::class, 'destroy'])->name('teklif.destroy');
-    Route::get('/teklif-durum/{conversation}', [ConversationController::class, 'durum'])->name('teklif.durum');
+    Route::post('/quotes/bulk-delete', [ConversationController::class, 'bulkDestroy'])->name('quote.bulk-destroy');
+    Route::get('/quote/{conversation}', [ConversationController::class, 'show'])->name('quote.show');
+    Route::post('/quote/{conversation}/message', [ConversationController::class, 'reply'])->name('quote.reply');
+    Route::post('/quote/{conversation}/delete', [ConversationController::class, 'destroy'])->name('quote.destroy');
+    Route::get('/quote-status/{conversation}', [ConversationController::class, 'status'])->name('quote.status');
 
-    Route::get('/bilgi-bankasi', [KnowledgeBaseController::class, 'index'])->name('bilgi-bankasi.index');
-    Route::post('/bilgi-ekle', [KnowledgeBaseController::class, 'store'])->name('bilgi-bankasi.store');
-    Route::post('/bilgi-duzenle/{entry}', [KnowledgeBaseController::class, 'update'])->name('bilgi-bankasi.update');
-    Route::post('/bilgi-sil/{entry}', [KnowledgeBaseController::class, 'destroy'])->name('bilgi-bankasi.destroy');
+    Route::get('/knowledge-base', [KnowledgeBaseController::class, 'index'])->name('knowledge-base.index');
+    Route::post('/knowledge-add', [KnowledgeBaseController::class, 'store'])->name('knowledge-base.store');
+    Route::post('/knowledge-edit/{entry}', [KnowledgeBaseController::class, 'update'])->name('knowledge-base.update');
+    Route::post('/knowledge-delete/{entry}', [KnowledgeBaseController::class, 'destroy'])->name('knowledge-base.destroy');
 
-    Route::get('/fiyatlar', [PricesController::class, 'index'])->name('fiyatlar.index');
-    Route::post('/fiyat-ekle', [PricesController::class, 'store'])->name('fiyatlar.store');
-    Route::post('/fiyat-duzenle/{fiyat}', [PricesController::class, 'update'])->name('fiyatlar.update');
+    Route::get('/prices', [PricesController::class, 'index'])->name('prices.index');
+    Route::post('/price-add', [PricesController::class, 'store'])->name('prices.store');
+    Route::post('/price-edit/{price}', [PricesController::class, 'update'])->name('prices.update');
     /*
      * YERİNDE DÜZENLEME (tabloda çift tıklama). Tam formdan ayrı bir uç:
      * yalnızca bir alan gönderilir, kalanlar ekrandan geri yazılmaz.
      */
-    Route::post('/fiyat-alan/{fiyat}', [PricesController::class, 'alanGuncelle'])->name('fiyatlar.alan');
+    Route::post('/price-field/{price}', [PricesController::class, 'updateField'])->name('prices.field');
 
-    Route::post('/fiyat-sil/{fiyat}', [PricesController::class, 'destroy'])->name('fiyatlar.destroy');
+    Route::post('/price-delete/{price}', [PricesController::class, 'destroy'])->name('prices.destroy');
 
     Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('/kullanicilar', [UserController::class, 'index'])->name('kullanicilar.index');
-        Route::post('/kullanicilar/ekle', [UserController::class, 'store'])->name('kullanicilar.store');
-        Route::post('/kullanicilar/{kullanici}/guncelle', [UserController::class, 'update'])->name('kullanicilar.update');
-        Route::post('/kullanicilar/{kullanici}/sil', [UserController::class, 'destroy'])->name('kullanicilar.destroy');
-        Route::post('/yetki-talepleri/{yetkiTalebi}/onayla', [UserController::class, 'onaylaYetkiTalebi'])->name('yetki-talepleri.onayla');
-        Route::post('/yetki-talepleri/{yetkiTalebi}/reddet', [UserController::class, 'reddetYetkiTalebi'])->name('yetki-talepleri.reddet');
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::post('/users/add', [UserController::class, 'store'])->name('users.store');
+        Route::post('/users/{user}/update', [UserController::class, 'update'])->name('users.update');
+        Route::post('/users/{user}/delete', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::post('/permission-requests/{permissionRequest}/approve', [UserController::class, 'approvePermissionRequest'])->name('permission-requests.approve');
+        Route::post('/permission-requests/{permissionRequest}/reject', [UserController::class, 'rejectPermissionRequest'])->name('permission-requests.reject');
 
-        Route::get('/istatistikler', [StatisticController::class, 'index'])->name('istatistikler.index');
+        Route::get('/statistics', [StatisticController::class, 'index'])->name('statistics.index');
 
         /*
          * KAYITLAR. Kayıt tutmak tek başına yetmiyor: kimse bakamıyorsa
@@ -92,8 +92,8 @@ Route::middleware('auth')->group(function () {
          * veritabanında durur ve config'in üzerine biner. Sırlar burada
          * DEĞİL kurulumun ortamında (bkz. config/settings.php).
          */
-        Route::get('/ayarlar', [SettingController::class, 'index'])->name('ayarlar.index');
-        Route::put('/ayarlar', [SettingController::class, 'update'])->name('ayarlar.update');
+        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
 
         /*
          * API JETONLARI — Ayarlar'ın bir sekmesi. Dışarıdaki entegrasyonlar
@@ -101,48 +101,48 @@ Route::middleware('auth')->group(function () {
          * yetkilerini aşamaz.
          */
         Route::controller(ApiTokenController::class)
-            ->prefix('api-jetonlari')
-            ->name('api-jetonlari.')
+            ->prefix('api-tokens')
+            ->name('api-tokens.')
             ->group(function () {
                 Route::get('/', 'index')->name('index');
 
-                /* Belge {jeton}'dan ÖNCE: yoksa "belge" bir jeton kimliği sanılırdı. */
-                Route::get('belge', 'belge')->name('belge');
+                /* Docs {token}'dan ÖNCE: yoksa "docs" bir jeton kimliği sanılırdı. */
+                Route::get('docs', 'docs')->name('docs');
 
                 Route::post('/', 'store')->name('store');
-                Route::get('{jeton}', 'show')->name('show');
-                Route::put('{jeton}', 'update')->name('update');
-                Route::put('{jeton}/sir', 'sir')->name('sir');
-                Route::put('{jeton}/iptal', 'iptal')->name('iptal');
-                Route::delete('{jeton}', 'destroy')->name('destroy');
+                Route::get('{token}', 'show')->name('show');
+                Route::put('{token}', 'update')->name('update');
+                Route::put('{token}/secret', 'secret')->name('secret');
+                Route::put('{token}/revoke', 'revoke')->name('revoke');
+                Route::delete('{token}', 'destroy')->name('destroy');
             });
 
         /*
          * SERTİFİKA. Tur sunucuda koşar; panel isteği bırakır ve sonucu okur
          * (bkz. CertificateController ve certificate-agent.sh).
          */
-        Route::get('/sertifika', [CertificateController::class, 'index'])->name('sertifika.index');
-        Route::post('/sertifika/tur', [CertificateController::class, 'baslat'])->name('sertifika.baslat');
-        Route::post('/sertifika/onayla', [CertificateController::class, 'tamamla'])->name('sertifika.tamamla');
+        Route::get('/certificate', [CertificateController::class, 'index'])->name('certificate.index');
+        Route::post('/certificate/run', [CertificateController::class, 'start'])->name('certificate.start');
+        Route::post('/certificate/confirm', [CertificateController::class, 'complete'])->name('certificate.complete');
 
         /*
          * VERİTABANI. Panel bağlantıyı sınar ve taşıma isteğini bırakır;
          * kopya yeniden başlatmada, panel kapalıyken yapılır
          * (bkz. DatabaseController ve ConnectionFile).
          */
-        Route::get('/veritabani', [DatabaseController::class, 'index'])->name('veritabani.index');
-        Route::post('/veritabani/sina', [DatabaseController::class, 'sina'])->name('veritabani.sina');
-        Route::post('/veritabani/tasi', [DatabaseController::class, 'tasi'])->name('veritabani.tasi');
+        Route::get('/database', [DatabaseController::class, 'index'])->name('database.index');
+        Route::post('/database/test', [DatabaseController::class, 'test'])->name('database.test');
+        Route::post('/database/migrate', [DatabaseController::class, 'migrate'])->name('database.migrate');
 
         /*
          * GÜNCELLEME. Yalnızca bakar: çalışan sürüm GitHub'daki son başarılı
          * derlemeyle karşılaştırılır (bkz. UpdateCheck).
          */
-        Route::get('/guncelleme', [UpdateController::class, 'index'])->name('guncelleme.index');
-        Route::post('/guncelleme', [UpdateController::class, 'denetle'])->name('guncelleme.denetle');
+        Route::get('/update', [UpdateController::class, 'index'])->name('update.index');
+        Route::post('/update', [UpdateController::class, 'check'])->name('update.check');
 
-        Route::get('/kayitlar', [LogController::class, 'denetim'])->name('kayitlar.denetim');
-        Route::post('/kayitlar/dogrula', [LogController::class, 'dogrula'])->name('kayitlar.dogrula');
-        Route::get('/kayitlar/hatalar', [LogController::class, 'hatalar'])->name('kayitlar.hatalar');
+        Route::get('/logs', [LogController::class, 'audit'])->name('logs.audit');
+        Route::post('/logs/verify', [LogController::class, 'verify'])->name('logs.verify');
+        Route::get('/logs/errors', [LogController::class, 'errors'])->name('logs.errors');
     });
 });

@@ -2,7 +2,7 @@
  * Teklif sohbeti — Tekliflerim listesiyle aynı ekranda duran mesaj akışı.
  *
  * `.column--fill`in gövdesi içinde kullanılır: mesajlar üstte akar,
- * `.mesaj-kutusu` gövdenin dibine yapışan sabit bir şerittir (bkz.
+ * `.message-box` gövdenin dibine yapışan sabit bir şerittir (bkz.
  * `.detail__foot` ile aynı formül).
  */
 
@@ -19,7 +19,7 @@
  * `touch-action` kuralı yok. Kural yazmamak, doğru kuralı yazmaktan iyi.
  */
 
-.mesaj {
+.message {
     max-width: 640px;
     padding: var(--space-3) var(--space-4);
     border: 1px solid var(--color-line);
@@ -27,21 +27,21 @@
     background: var(--color-surface);
 }
 
-.mesaj + .mesaj {
+.message + .message {
     margin-top: var(--space-4);
 }
 
-.mesaj--assistant {
+.message--assistant {
     margin-right: auto;
 }
 
-.mesaj--user {
+.message--user {
     margin-left: auto;
     background: var(--color-selected);
     border-color: var(--color-line-strong);
 }
 
-.mesaj__rol {
+.message__role {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -55,23 +55,23 @@
 }
 
 /* Kopyala düğmesi metnin yanında büyük durmasın: satırla aynı yükseklik. */
-.mesaj__rol .btn {
+.message__role .btn {
     height: 20px;
     width: 20px;
 }
 
-.mesaj__rol .btn svg {
+.message__role .btn svg {
     width: 11px;
     height: 11px;
 }
 
-.mesaj__icerik {
+.message__content {
     white-space: pre-wrap;
     font-size: var(--text-md);
     line-height: 1.6;
 }
 
-.mesaj--bekleniyor {
+.message--pending {
     display: flex;
     align-items: center;
     gap: var(--space-3);
@@ -80,7 +80,7 @@
 }
 
 /* Mesaj kutusu: gövdenin dibine yapışır, .detail__foot ile aynı formül. */
-.mesaj-kutusu {
+.message-box {
     display: flex;
     align-items: flex-end;
     gap: var(--space-3);
@@ -89,14 +89,14 @@
     flex-shrink: 0;
 }
 
-.mesaj-kutusu .textarea {
+.message-box .textarea {
     flex: 1;
     min-height: 44px;
     max-height: 160px;
 }
 
 /* Yeni teklif formundaki bloklar birbirine yapışmasın (bkz. .page__inner). */
-.yeni-teklif > * + * {
+.new-quote > * + * {
     margin-top: var(--space-5);
 }
 
@@ -107,17 +107,17 @@
  * SATIRINA iner, sütun genişliği kadar
  * yayılır; `min-width` burada anlamsız, sıfırlanır.
  */
-.column__head--dikey {
+.column__head--vertical {
     flex-direction: column;
     align-items: stretch;
     gap: var(--space-3);
 }
 
-.column__head--dikey > .row {
+.column__head--vertical > .row {
     width: 100%;
 }
 
-.teklif-arama {
+.quote-search {
     width: 100%;
     min-width: 0;
 }
@@ -126,7 +126,7 @@
  * Toplu seçim şeridi: sütun başlığının hemen altında, `.bulk` bileşenini
  * çevreleyen ince bir kap. `.column__head` ile aynı yatay boşluğu paylaşır.
  */
-.teklif-toplu-cubuk {
+.quote-bulk-bar {
     padding: var(--space-2) var(--space-4);
     border-bottom: 1px solid var(--color-line);
 }
@@ -139,20 +139,20 @@
  * SİL DÜĞMESİ AKIŞTAN ÇIKTI (bkz. aşağısı): başlık satırın sağ kenarına
  * kadar uzanabilsin diye konumlandırma buradan veriliyor.
  */
-.teklif-satiri {
+.quote-row {
     position: relative;
     display: flex;
     align-items: center;
     gap: var(--space-2);
 }
 
-.teklif-satiri > input[type='checkbox'] {
+.quote-row > input[type='checkbox'] {
     flex-shrink: 0;
     margin-left: var(--space-4);
     cursor: pointer;
 }
 
-.teklif-satiri > .row-item {
+.quote-row > .row-item {
     flex: 1;
     min-width: 0;
     padding-left: var(--space-2);
@@ -172,7 +172,7 @@
  *
  * Görünürlük yine satır üzerine gelince/klavye odağında (bkz. .table__row-actions).
  */
-.teklif-satiri > .btn {
+.quote-row > .btn {
     position: absolute;
     right: var(--space-3);
     bottom: 0;
@@ -180,8 +180,8 @@
     transition: opacity var(--transition-fast);
 }
 
-.teklif-satiri:hover > .btn,
-.teklif-satiri:focus-within > .btn {
+.quote-row:hover > .btn,
+.quote-row:focus-within > .btn {
     opacity: 1;
 }
 
@@ -193,11 +193,11 @@
  * binmesi, yer ayırmasından daha kötü olurdu — o yüzden kendi yerini alır.
  */
 @media (hover: none) {
-    .teklif-satiri {
+    .quote-row {
         padding-right: var(--space-3);
     }
 
-    .teklif-satiri > .btn {
+    .quote-row > .btn {
         position: static;
         flex-shrink: 0;
         opacity: 1;
@@ -213,7 +213,7 @@
  * payını alınca başlığa yer kalmıyordu.
  * Başlık artık kendi satırında; tarih ve durum altına, küçük ve sessiz.
  */
-.teklif-baglanti {
+.quote-link {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -221,14 +221,14 @@
     min-width: 0;
 }
 
-.teklif-baslik {
+.quote-title {
     display: flex;
     align-items: center;
     gap: var(--space-2);
     min-width: 0;
 }
 
-.teklif-baslik .row-item__label {
+.quote-title .row-item__label {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -238,7 +238,7 @@
  * Sağdaki boşluk sil düğmesinin yeri: düğme akış dışında durduğu için
  * yerini burası ayırır, yoksa tarih düğmenin altında kalırdı.
  */
-.teklif-alt {
+.quote-footer {
     display: flex;
     align-items: center;
     gap: var(--space-2);
@@ -250,13 +250,13 @@
 
 /* Dokunmatikte düğme akışta duruyor; alt satırın yer ayırmasına gerek yok. */
 @media (hover: none) {
-    .teklif-alt {
+    .quote-footer {
         padding-right: 0;
     }
 }
 
 /* Tarih sağa yaslanır: durum etiketiyle yarışmasın. */
-.teklif-alt .row-item__meta {
+.quote-footer .row-item__meta {
     margin-left: auto;
 }
 
@@ -275,20 +275,20 @@
     50% { opacity: 0.35; transform: scale(0.82); }
 }
 
-.dot--calisiyor {
+.dot--running {
     animation: teklif-nabiz 1.4s ease-in-out infinite;
 }
 
-.teklif-durum {
+.quote-status {
     font-size: var(--text-sm);
 }
 
-.teklif-durum--calisiyor {
+.quote-status--running {
     color: var(--color-yellow-fg);
     animation: teklif-nabiz 1.4s ease-in-out infinite;
 }
 
-.teklif-durum--hata {
+.quote-status--error {
     color: var(--color-red-fg);
 }
 
@@ -299,19 +299,19 @@
  * yazıyla ayrılıyor. İkisi aynı işaretle gösterilseydi "hâlâ sürüyor" ile
  * "bitti, bakmadın" ayırt edilemezdi.
  */
-.teklif-baglanti--okunmamis .row-item__label {
+.quote-link--unread .row-item__label {
     font-weight: var(--weight-semibold);
     color: var(--color-text);
 }
 
-.teklif-durum--yeni {
+.quote-status--new {
     color: var(--color-accent);
     font-weight: var(--weight-medium);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .dot--calisiyor,
-    .teklif-durum--calisiyor {
+    .dot--running,
+    .quote-status--running {
         animation: none;
     }
 }
@@ -324,6 +324,6 @@
  * gibi görünmemeli: bir satır kadar yer kaplar ve basılınca yerine yeni
  * satırlar gelir.
  */
-.teklif-daha {
+.quote-more {
     padding: var(--space-2) var(--space-4) var(--space-4);
 }

@@ -15,6 +15,6 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        config(['company.ad' => '', 'company.site' => '', 'company.istem_dosyasi' => '', 'company.site_sayfalari_dosyasi' => '']);
+        config(['company.name' => '', 'company.website' => '', 'company.prompt_file' => '', 'company.site_pages_file' => '']);
     }
 }

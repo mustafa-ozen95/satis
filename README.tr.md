@@ -48,7 +48,7 @@ Ayarlar → **API jetonları** ekranında; belge sayfası rotalardan üretilir.
 Her anlamlı işlem yazılır ve satırlar HMAC-SHA256 ile zincirlenir: bir satırı
 sonradan değiştiren ya da silen zinciri kırar.
 
-    php artisan denetim:dogrula
+    php artisan audit:verify
 
 
 ## Kurulum
@@ -62,7 +62,7 @@ Ayrıntı ve değişkenler: `docker/README.md`, `.env.example`.
     docker compose exec panel supervisorctl status         # servisler
 
 Depoda hiçbir şirketin adı, sitesi ya da iş kuralı durmaz: şirket adı ve site
-ortamdan gelir (`SIRKET_ADI`, `SIRKET_SITESI`), şirkete özgü teklif istemi ve
+ortamdan gelir (`COMPANY_NAME`, `COMPANY_WEBSITE`), şirkete özgü teklif istemi ve
 siteden okunacak sayfalar `storage/app/company/` altındaki isteğe bağlı
 dosyalardır (bkz. `docker/README.md`). Bunlar yoksa panel genel bir istemle
 çalışır ve site taramasını atlar.
@@ -72,8 +72,8 @@ dosyalardır (bkz. `docker/README.md`). Bunlar yoksa panel genel bir istemle
 
 | | |
 |---|---|
-| `php artisan kimlik:esitle` | merkezdeki erişim değişikliklerini işler (zamanlayıcı: her gece 04:10) |
-| `php artisan denetim:dogrula` | denetim zincirini doğrular (zamanlayıcı: 03:30) |
+| `php artisan identity:sync` | merkezdeki erişim değişikliklerini işler (zamanlayıcı: her gece 04:10) |
+| `php artisan audit:verify` | denetim zincirini doğrular (zamanlayıcı: 03:30) |
 | `php artisan queue:work` | teklif üretimi (konteynerde supervisord koşturuyor) |
 
 

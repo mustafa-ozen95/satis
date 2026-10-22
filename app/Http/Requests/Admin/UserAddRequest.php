@@ -36,7 +36,7 @@ class UserAddRequest extends FormRequest
              * o. Adressiz bir hesap ne parolayla ne merkezle girebilirdi.
              */
             'eposta' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
-            'sifre' => ['required', 'string', 'min:'.config('panel.parola_uzunluk')],
+            'sifre' => ['required', 'string', 'min:'.config('panel.password_length')],
             /*
              * ROL BİR KAYITTIR: slug'ı doğrulanır, listeye koda gömülü bir
              * dizi yazılmaz. Yeni bir rol eklendiğinde burayı da düzenlemek

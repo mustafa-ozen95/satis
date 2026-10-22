@@ -47,13 +47,13 @@ class QuoteApiController extends Controller implements HasMiddleware
 
         $konusma->messages()->create(['role' => 'user', 'content' => $veri['talep']]);
 
-        $kayit->kaydet('teklif_olustur', 'API üzerinden teklif istendi', $konusma);
+        $kayit->log('teklif_olustur', 'API üzerinden teklif istendi', $konusma);
 
         GenerateQuoteJob::dispatch($konusma, $veri['talep']);
 
         /*
          * 202: iş KUYRUĞA ALINDI, metin hazır değil. İstemci kimliği alıp
-         * durumu teklif.show ile soruyor.
+         * durumu quotes.show ile soruyor.
          *
          * `refresh()`: durumun varsayılanı veritabanında tanımlı ve yeni
          * oluşturulan model örneğine yansımıyor; okumadan dönersek istemciye
@@ -64,17 +64,17 @@ class QuoteApiController extends Controller implements HasMiddleware
             ->setStatusCode(202);
     }
 
-    public function show(Request $request, Conversation $teklif): QuoteApiResource
+    public function show(Request $request, Conversation $quote): QuoteApiResource
     {
         /*
          * BAŞKASININ TEKLİFİ OKUNAMAZ. Yönetici hepsini görebilir; kural
          * ekrandakiyle aynı yerden geliyor (ConversationPolicy) — iki ayrı
          * kural yazılsaydı biri gevşerdi.
          */
-        $this->authorize('view', $teklif);
+        $this->authorize('view', $quote);
 
         return new QuoteApiResource(
-            $teklif->load(['messages' => fn ($sorgu) => $sorgu->orderBy('created_at')]),
+            $quote->load(['messages' => fn ($sorgu) => $sorgu->orderBy('created_at')]),
         );
     }
 }

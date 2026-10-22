@@ -53,7 +53,7 @@ class GenerateQuoteJob implements ShouldQueue
 
     public function handle(QuoteService $teklifService): void
     {
-        $sonuc = $teklifService->generateTeklif($this->buildTalep());
+        $sonuc = $teklifService->generateQuote($this->buildRequest());
 
         $this->conversation->messages()->create([
             'role' => 'assistant',
@@ -69,7 +69,7 @@ class GenerateQuoteJob implements ShouldQueue
      * "MÜŞTERİ TALEBİ" metnine dönüştürülür. İlk mesajda (tek mesaj varken)
      * davranış eskisiyle birebir aynıdır: yalnızca ham talep metni.
      */
-    protected function buildTalep(): string
+    protected function buildRequest(): string
     {
         $mesajlar = $this->conversation->messages()->orderBy('created_at')->get();
 
