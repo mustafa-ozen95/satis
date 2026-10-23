@@ -77,6 +77,7 @@ services:
       - THEME_COOKIE_DOMAIN
       - AUDIT_KEY
       - UPDATE_TOKEN
+      - UPDATE_HOOK_URL
       - PANEL_EMAIL
       - PANEL_PASSWORD
       - PANEL_NAME
