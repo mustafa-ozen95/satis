@@ -186,9 +186,11 @@ Ekran **yalnızca bakar**; güncelleme sunucudan, yedekle ve onayla yapılır.
 ## Sertifika sekmesi
 
 Ayarlar → Sertifika, sunucudaki sertifika ajanının durumunu gösterir ve ona tur isteği
-bırakır (`/etc/dc/sertifika-durum.json`, `/etc/dc/sertifika-panel`). Standart kurulumda
-TLS'i vekil yönettiği için bu dosyalar bağlı değildir; sekme "bilinmiyor" der ve
-düğmeler çalışmaz. Depodaki `certificate.sh`, `certificate-agent.sh` ve
+bırakır (`/etc/dc/sertifika-durum.json`, `/etc/dc/sertifika-panel`). Compose bu
+dizini panele bağlar: durum salt okunur, istek dizini yazılabilir. Dizini sunucudaki
+ortak sertifika ajanı (`/opt/dc-sertifika`) besler; tek sertifika bütün DC panellerini
+kapsar ve NineDeploy üzerinden vekile kurulur. Ajan kurulu değilse sekme
+"bilinmiyor" der ve düğmeler "istek iletilemedi" hatası verir. Depodaki `certificate.sh`, `certificate-agent.sh` ve
 `docker/certificate-setup.sh`, önünde vekil olmadan TLS'i panelin kendisinin bitirdiği kurulum
 içindir.
 
