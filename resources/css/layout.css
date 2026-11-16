@@ -2,7 +2,7 @@
  * Sütun yerleşimi.
  *
  * Ekran bir üst çubuk ve yatay bir sütun şeridinden oluşur. Her sütun bir
- * daralma adımıdır (ör. Grup → Kayıt → Ayrıntı); son sütun esner, en sağda
+ * daralma adımıdır (ör. Grup → Kayıt); son sütun esner, en sağda
  * isteğe bağlı detay paneli durur. Sayfa kavramı yoktur.
  */
 
@@ -23,6 +23,20 @@
     border-bottom: 1px solid var(--color-line);
     background: var(--color-column);
     flex-shrink: 0;
+
+    /*
+     * Üst çubuk sayfa içeriğinin ÜSTÜNDEDİR.
+     *
+     * Bunsuz, içinden açılan bildirim paneli yapışkan tablo başlığının
+     * altında kalır: ikisi de --z-sticky kullanır ve eşit değerde DOM'da
+     * sonra gelen kazanır.
+     *
+     * Ayrıca AÇILIR PANELLERİN DAYANAĞIDIR: dar ekranda bildirim paneli
+     * düğmeye değil başlığa yaslanır ve böylece ekranın dışına taşmaz
+     * (bkz. components/notification.css).
+     */
+    position: relative;
+    z-index: var(--z-dropdown);
 }
 
 .topbar__mark {
@@ -424,8 +438,8 @@
 
 /*
  * Dar ekranda sütunlar gizlenmez, şerit yatay kayar. Gizlemek gezinmeyi
- * koparır: bir sütundan sonrakine geçilemez, tablette detay paneline hiç
- * ulaşılamaz.
+ * koparıyordu: bir sütundan sonrakine geçilemiyor, tablette en sağdaki
+ * panele hiç ulaşılamıyordu.
  */
 @media (max-width: 1100px) {
     .columns {
@@ -463,8 +477,8 @@
      * Bölüm menüsü kendi satırına iner ve SARMALAR.
      *
      * Önce yatay kayıyordu: sığmayan bölümler sağda kesik kalıyor, oraya
-     * ulaşmak için şeridi parmakla kaydırmak gerekiyordu ve bu hareket
-     * kolayca fark edilmiyor — gizli kalan bir bölüm, olmayan bir bölümdür. Artık hepsi alt alta görünüyor; menü bir iki
+     * ulaşmak için şeridi parmakla kaydırmak gerekiyordu; gizli kalan bir
+     * bölüm, olmayan bir bölümdür. Artık hepsi alt alta görünüyor; menü bir iki
      * satır daha yer kaplıyor ama hiçbir bölüm saklanmıyor.
      */
     .topbar__nav {
@@ -493,7 +507,7 @@
      * Telefonda her bölme TAM ekran kaplar ve bir parmak hareketi bir bölme
      * ilerletir.
      *
-     * Bölmeler ekrandan darken tek geçiş birkaç hareket sürüyordu: kaydırma
+     * Bölmeler ekrandan darken tek geçiş 3-4 hareket sürüyordu: kaydırma
      * bölmenin ortasında kalıyor, hangi bölmede olunduğu da belirsizleşiyordu.
      *
      * Hizalama KESİN (mandatory): yavaş ya da kısa bir hareket de bölmeyi
@@ -558,6 +572,18 @@
 .topbar__nav {
     display: flex;
     gap: var(--space-1);
+
+    /*
+     * Şerit DARALIR ve kendi içinde kayar; belgeyi genişletmez.
+     *
+     * Şerit bağlantılarla (aşağıdaki .topbar__link) aynı bloğa girip
+     * flex-shrink: 0 alırsa tablet genişliğinde üst çubuk satırı ekrandan
+     * taşar: ÜST ÇUBUK sabit olduğu için taşma tüm belgeye geçer ve panelin
+     * HER sayfası yatay kayar. min-width olmadan flex öğesi içeriğinden dar
+     * olamaz; ikisi birlikte gerekir.
+     */
+    min-width: 0;
+    overflow-x: auto;
 }
 
 /*
@@ -590,9 +616,9 @@
 
 .topbar__link {
     /*
-     * Bağlantı DARALMAZ ve metni kırılmaz: dar ekranda iki kelimelik bir
-     * bölüm adı iki satıra düşer, uzun bir ad ortadan kesilir. Şerit yatay
-     * kayar, yazı bölünmez.
+     * Bağlantı DARALMAZ ve metni kırılmaz: dar ekranda iki sözcüklü bölüm
+     * adları iki satıra düşüyor, "Kullanıcılar" ortadan kesiliyordu. Şerit yatay kayar,
+     * yazı bölünmez.
      */
     flex-shrink: 0;
     white-space: nowrap;
@@ -635,4 +661,40 @@
     .split__side {
         position: static;
     }
+}
+
+/*
+ * 403 — yetkisiz erişim denemesi.
+ *
+ * 404 ile aynı kalıpta gösterilince yetki reddi sıradan bir hata gibi
+ * görünüyordu. Ayrım renkle değil ANLAMLA kuruluyor: kalkan simgesi ve
+ * denenen yol. Renk yalnızca destekliyor; tek başına taşımıyor, çünkü
+ * renk körlüğünde ve yüksek karşıtlık kipinde kaybolur.
+ */
+.gate__mark--warning {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-red-fg);
+}
+
+.gate__mark--warning svg {
+    width: 1.1em;
+    height: 1.1em;
+    flex: none;
+}
+
+/* Denenen yol: kullanıcı yanlış bağlantıya tıkladıysa hangisi olduğunu görsün. */
+.gate__path {
+    background: var(--color-red-bg);
+    border-radius: var(--radius-sm);
+    color: var(--color-red-fg);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-5);
+    overflow-wrap: anywhere;
+    padding: var(--space-2) var(--space-3);
+}
+
+.gate__lead--small {
+    font-size: var(--text-sm);
 }
